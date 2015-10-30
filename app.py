@@ -21,7 +21,9 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'this_should_be_configur
 @app.route('/')
 def home():
     """Render website's home page."""
-    return render_template('home.html')
+    import plugin_directory as pd
+    plugins = pd.get_directory()
+    return render_template('home.html', plugins=plugins)
 
 
 @app.route('/about/')

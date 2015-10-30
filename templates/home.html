@@ -6,5 +6,22 @@
 
 
 {% block main %}
-foo
+<h2>Plugins</h2>
+
+<table>
+  <thead>
+    <th>Shortcuts</th>
+    <th>Plugin</th>
+    <th>Description</th>
+  </thead>
+  <tbody>
+    {% for plugin in plugins %}
+        <tr>
+            <td>-</td>
+            <td><a href="{{ plugin.url }}">{{ plugin.name.decode('utf-8') }}</a></td>
+            <td>{{ plugin.description.decode('utf-8') }}</td>
+        </tr>
+    {% endfor %}
+  </tbody>
+</table>
 {% endblock %}
