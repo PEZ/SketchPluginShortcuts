@@ -35,3 +35,7 @@ pip-log.txt
 
 # Vim
 *.swp
+
+# Secrets
+*.secret
+.env

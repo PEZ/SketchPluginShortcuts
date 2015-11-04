@@ -1,41 +1,11 @@
 #!/usr/bin/env python
 
-"""Tests for the Flask Heroku template."""
+"""Tests for the Plugin directory shortcuts service"""
 
 import unittest
-from app import app
+import re
 
-
-class TestApp(unittest.TestCase):
-
-    def setUp(self):
-        self.app = app.test_client()
-
-    def test_home_page_works(self):
-        rv = self.app.get('/')
-        self.assertTrue(rv.data)
-        self.assertEqual(rv.status_code, 200)
-
-    def test_about_page_works(self):
-        rv = self.app.get('/about/')
-        self.assertTrue(rv.data)
-        self.assertEqual(rv.status_code, 200)
-
-    def test_default_redirecting(self):
-        rv = self.app.get('/about')
-        self.assertEqual(rv.status_code, 301)
-
-    def test_404_page(self):
-        rv = self.app.get('/i-am-not-found/')
-        self.assertEqual(rv.status_code, 404)
-
-    def test_static_text_file_request(self):
-        rv = self.app.get('/robots.txt')
-        self.assertTrue(rv.data)
-        self.assertEqual(rv.status_code, 200)
-        rv.close()
-
-import plugin_directory as pd
+from plugin_directory import PluginDirectory as pd
 
 class TestDirectory(unittest.TestCase):
 
@@ -56,14 +26,66 @@ A list of Sketch plugins hosted at GitHub, in alphabetical order.
 - [acollurafici/Sketch-Nearest-8](https://github.com/acollurafici/sketch-nearest-8) Sketch Plugin to round shape size to the nearest multiple of 8
 - [adamhowell/random-opacity-sketch-plugin](https://github.com/adamhowell/random-opacity-sketch-plugin) Randomly change the opacity of selected objects in Sketch.
 - [ajaaibu/ThaanaText](https://github.com/ajaaibu/thaanatext) Sketch Plugin to generate thaana strings, paragraphs, articles.
+- [alessndro/sketch-plugins](https://github.com/alessndro/sketch-plugins) An incredible collection of plugins, including some great ones for working with baselines.
+- [PEZ/SketchDistributor](https://github.com/pez/sketchdistributor) Distribute selection objects vertically or horizontally with a given spacing between them.
+- [utom/sketch-measure](https://github.com/utom/sketch-measure) A measure tool for Sketch.app (think Specctr for Sketch)
 '''
+        self.repos = pd._get_directory(self.plugins_raw)
+        self.repo_limit = 5
 
-    def test_extract_plugins(self):
-        plugins = pd._get_directory(self.plugins_raw)
-        self.assertEqual(len(plugins), 10)
-        self.assertEqual(plugins[8].name, 'adamhowell/random-opacity-sketch-plugin')
-        self.assertEqual(plugins[0].url, 'https://github.com/47deg/pointgrid')
-        self.assertEqual(plugins[9].description, '''Sketch Plugin to generate thaana strings, paragraphs, articles.''')
+    def test_fail(self):
+        self.assertTrue(False)
+
+    def test_extract_repos(self):
+        self.assertEqual(len(self.repos), 13)
+        self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].name, 'adamhowell/random-opacity-sketch-plugin')
+        self.assertEqual(self.repos['47deg/pointgrid'].url, 'https://github.com/47deg/pointgrid')
+        self.assertEqual(self.repos['ajaaibu/ThaanaText'].description, '''Sketch Plugin to generate thaana strings, paragraphs, articles.''')
+
+    def test_build_search_query_repos_string(self):
+        queries = list(pd._build_search_query_repos_string(self.repos, self.repo_limit))
+        self.assertEqual(len(queries), 3)
+        for query in queries:
+            self.assertTrue(re.search(r' repo:', query))
+
+    def test_extract_shortcut_old_style_from_text(self):
+        text = '''// shortcut: (shift cmd o)
+// sketch-random-opacity
+// @author	Adam Howell
+
+var userValues = [doc
+abynim/BaseAlign:  __Apply__.
+![Configuration Window](config_dialog.png)'''
+        self.assertEqual(pd._extract_shortcuts_old_style_from_text(text)[0], 'shift cmd o')
+        
+    def d_test_get_shortcuts_old_style(self):
+        pass
+
+    def d_test_add_shortcuts_to_directory(self):
+        repo_shortcuts = pd._get_shortcuts_old_style(self.repos, self.repo_limit)
+        pd.add_shortcuts_to_directory(self.repos, repo_shortcuts)
+        self.assertEqual(len(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts), 1)
+
+    def d_test_add_shortcuts_for_repo_to_directory(self):
+        repo_shortcuts = pd._get_shortcuts_old_style(self.repos, self.repo_limit)
+        for r, s in repo_shortcuts:
+            pd._add_shortcuts_for_repo_to_directory(self.repos, r, s)
+            self.assertEqual(self.repos[r].shortcuts, s)
+
+    def test_get_github_token(self):
+        self.assertNotEqual(pd._get_github_token(), '')
+
+
+from plugin_directory import Shortcut
+
+class TestShortcut(unittest.TestCase):
+
+    def test_get_shortcut(self):
+        self.assertEquals(Shortcut('ctrl shift a').get_canonical(), 'ctrl + shift + a')
+        self.assertEquals(Shortcut('shift ctrl a').get_canonical(), 'ctrl + shift + a')
+        self.assertEquals(Shortcut('ctrl shift cmd option 7').get_canonical(), 'ctrl + shift + option + command + 7')
+        self.assertEquals(Shortcut('command ctrl a').get_canonical(), 'ctrl + command + a')
+        self.assertEquals(Shortcut('CMD ctrl a').get_canonical(), 'ctrl + command + a')
 
 
     

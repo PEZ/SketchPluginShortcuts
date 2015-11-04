@@ -21,10 +21,18 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'this_should_be_configur
 @app.route('/')
 def home():
     """Render website's home page."""
-    import plugin_directory as pd
+    from plugin_directory import PluginDirectory as pd
     plugins = pd.get_directory()
-    return render_template('home.html', plugins=plugins)
+    return render_template('home.html', plugins=sorted(plugins.values()))
 
+@app.route('/apport')
+def fectch():
+    """Fetch shortcuts and render"""
+    from plugin_directory import PluginDirectory as pd
+    plugins = pd.get_directory()
+    repo_shortcuts = pd._get_shortcuts_old_style(plugins, 40)
+    pd.add_shortcuts_to_directory(plugins, repo_shortcuts)
+    return render_template('apport.html', plugins=sorted(plugins.values()))
 
 @app.route('/about/')
 def about():
