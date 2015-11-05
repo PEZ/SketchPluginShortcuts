@@ -19,7 +19,7 @@
         <tr>
             <td>
                 {% for shortcut in plugin.shortcuts %}
-                    <p>{{shortcut.get_canonical()}}</p>
+                    <p>{{shortcut.to_string()}}</p>
                 {% endfor %}
             </td>
             <td><a href="{{ plugin.url }}">{{ plugin.name.decode('utf-8') }}</a></td>

@@ -33,9 +33,6 @@ A list of Sketch plugins hosted at GitHub, in alphabetical order.
         self.repos = pd._get_directory(self.plugins_raw)
         self.repo_limit = 5
 
-    def test_fail(self):
-        self.assertTrue(False)
-
     def test_extract_repos(self):
         self.assertEqual(len(self.repos), 13)
         self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].name, 'adamhowell/random-opacity-sketch-plugin')
@@ -58,15 +55,16 @@ abynim/BaseAlign:  __Apply__.
 ![Configuration Window](config_dialog.png)'''
         self.assertEqual(pd._extract_shortcuts_old_style_from_text(text)[0], 'shift cmd o')
         
-    def d_test_get_shortcuts_old_style(self):
+    def test_get_shortcuts_old_style(self):
         pass
 
-    def d_test_add_shortcuts_to_directory(self):
+    def test_add_shortcuts_to_directory(self):
         repo_shortcuts = pd._get_shortcuts_old_style(self.repos, self.repo_limit)
         pd.add_shortcuts_to_directory(self.repos, repo_shortcuts)
         self.assertEqual(len(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts), 1)
+        self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts[0].to_string(), 'shift + command + o')
 
-    def d_test_add_shortcuts_for_repo_to_directory(self):
+    def test_add_shortcuts_for_repo_to_directory(self):
         repo_shortcuts = pd._get_shortcuts_old_style(self.repos, self.repo_limit)
         for r, s in repo_shortcuts:
             pd._add_shortcuts_for_repo_to_directory(self.repos, r, s)
@@ -75,17 +73,23 @@ abynim/BaseAlign:  __Apply__.
     def test_get_github_token(self):
         self.assertNotEqual(pd._get_github_token(), '')
 
+    def test_freeze_thaw(self):
+        pd.freeze(self.repos)
+        thawed_repos = pd.thaw()
+        self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].description, thawed_repos['adamhowell/random-opacity-sketch-plugin'].description)
+
+
 
 from plugin_directory import Shortcut
 
 class TestShortcut(unittest.TestCase):
 
     def test_get_shortcut(self):
-        self.assertEquals(Shortcut('ctrl shift a').get_canonical(), 'ctrl + shift + a')
-        self.assertEquals(Shortcut('shift ctrl a').get_canonical(), 'ctrl + shift + a')
-        self.assertEquals(Shortcut('ctrl shift cmd option 7').get_canonical(), 'ctrl + shift + option + command + 7')
-        self.assertEquals(Shortcut('command ctrl a').get_canonical(), 'ctrl + command + a')
-        self.assertEquals(Shortcut('CMD ctrl a').get_canonical(), 'ctrl + command + a')
+        self.assertEquals(Shortcut('ctrl shift a').to_string(), 'ctrl + shift + a')
+        self.assertEquals(Shortcut('shift ctrl a').to_string(), 'ctrl + shift + a')
+        self.assertEquals(Shortcut('ctrl shift cmd option 7').to_string(), 'ctrl + shift + option + command + 7')
+        self.assertEquals(Shortcut('command ctrl a').to_string(), 'ctrl + command + a')
+        self.assertEquals(Shortcut('CMD ctrl a').to_string(), 'ctrl + command + a')
 
 
     

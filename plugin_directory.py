@@ -1,7 +1,14 @@
 import urllib2
 import re
 import string
+import jsonpickle
 
+import os
+
+import redis
+
+redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
+redis = redis.from_url(redis_url)
 
 class Shortcut(object):
     SEPARATOR_RE = re.compile(r'\s+')
@@ -27,7 +34,7 @@ class Shortcut(object):
             elif len(lower_key) == 1:
                 self._key = lower_key
 
-    def get_canonical(self):
+    def to_string(self):
         s = ''
         if self._ctrl:
             s = s + 'ctrl + '
@@ -51,22 +58,41 @@ class Repo(object):
     def add_shortcut(self, shortcut):
         self.shortcuts.append(shortcut)
 
+
 class PluginDirectory(object):
     DIRECTORY_RAW_URL='https://raw.githubusercontent.com/sketchplugins/plugin-directory/master/README.md'
-    TOKEN_FILE = 'token.secret'
     DIRECTORY_RE = re.compile(r'^- \[(.+?)\]\((.+?)\) (.+)$', re.M)
     SHORTCUT_OLD_STYLE_RE = re.compile(r'\bshortcut:\s+\(([^)]*?)\)', re.M)
+    FREEZER_KEY = "frozen"
 
     gh = None
 
     @staticmethod
-    def get_directory():
+    def freeze(directory):
+        redis.set(PluginDirectory.FREEZER_KEY, jsonpickle.encode(directory))
+
+    @staticmethod
+    def thaw():
+        import os.path
+        thawed = None
+        try:
+            thawed = jsonpickle.decode(redis.get(PluginDirectory.FREEZER_KEY))
+        except:
+            pass
+        return thawed
+
+    @staticmethod
+    def fetch_directory():
         repos = []
         try:
             repos = PluginDirectory._get_directory(urllib2.urlopen(PluginDirectory.DIRECTORY_RAW_URL).read())
         except(e):
             pass
         return repos
+
+    @staticmethod
+    def get_directory():
+        return PluginDirectory.thaw()
 
     @staticmethod
     def _get_directory(raw):
@@ -85,7 +111,6 @@ class PluginDirectory(object):
 
     @staticmethod
     def _get_github_token():
-        import os
         return os.environ.get('GITHUB_TOKEN','')
 
     @staticmethod
