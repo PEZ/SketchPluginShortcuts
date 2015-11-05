@@ -10,6 +10,7 @@ import redis
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 redis = redis.from_url(redis_url)
 
+
 class Shortcut(object):
     SEPARATOR_RE = re.compile(r'\s+')
 
@@ -64,15 +65,16 @@ class PluginDirectory(object):
     DIRECTORY_RE = re.compile(r'^- \[(.+?)\]\((.+?)\) (.+)$', re.M)
     SHORTCUT_OLD_STYLE_RE = re.compile(r'\bshortcut:\s+\(([^)]*?)\)', re.M)
     FREEZER_KEY = "frozen"
+    REPO_SEARCH_LIMIT = 40
 
     gh = None
 
     @staticmethod
-    def freeze(directory):
+    def _freeze(directory):
         redis.set(PluginDirectory.FREEZER_KEY, jsonpickle.encode(directory))
 
     @staticmethod
-    def thaw():
+    def _thaw():
         import os.path
         thawed = None
         try:
@@ -82,17 +84,16 @@ class PluginDirectory(object):
         return thawed
 
     @staticmethod
-    def fetch_directory():
+    def fetch_directory(repo_limit):
         repos = []
-        try:
-            repos = PluginDirectory._get_directory(urllib2.urlopen(PluginDirectory.DIRECTORY_RAW_URL).read())
-        except(e):
-            pass
+        repos = PluginDirectory._get_directory(urllib2.urlopen(PluginDirectory.DIRECTORY_RAW_URL).read())
+        PluginDirectory._fetch_and_add_shortcuts_to_directory(repos, repo_limit)
+        PluginDirectory._freeze(repos)
         return repos
 
     @staticmethod
     def get_directory():
-        return PluginDirectory.thaw()
+        return PluginDirectory._thaw()
 
     @staticmethod
     def _get_directory(raw):
@@ -100,9 +101,14 @@ class PluginDirectory(object):
         return {repo[0]: Repo(repo[0], repo[1], repo[2]) for repo in repos}
             
     @staticmethod
-    def add_shortcuts_to_directory(directory, repo_shortcuts):
+    def _add_shortcuts_to_directory(directory, repo_shortcuts):
         for r, s in repo_shortcuts:
             PluginDirectory._add_shortcuts_for_repo_to_directory(directory, r, s)
+
+    @staticmethod
+    def _fetch_and_add_shortcuts_to_directory(directory, repo_limit):
+        for repo, shortcuts in PluginDirectory._fetch_shortcuts(directory, repo_limit):
+            PluginDirectory._add_shortcuts_for_repo_to_directory(directory, repo, shortcuts)
 
     @staticmethod
     def _add_shortcuts_for_repo_to_directory(directory, repo, shortcuts):
@@ -129,7 +135,14 @@ class PluginDirectory(object):
             PluginDirectory.gh = login(token=token)
 
     @staticmethod
-    def _get_shortcuts_old_style(directory, repo_limit):
+    def _fetch_shortcuts(directory, repo_limit):
+        from itertools import chain
+        search_results = [PluginDirectory._fetch_shortcuts_old_style(directory, repo_limit)]
+        search_results.append(PluginDirectory._fetch_shortcuts_plugin_plugin_bundle(directory, repo_limit))
+        return chain.from_iterable(search_results)
+
+    @staticmethod
+    def _fetch_shortcuts_old_style(directory, repo_limit):
         search_results = PluginDirectory._search_old_style_plugin(directory, repo_limit=repo_limit)
         for result in search_results:
             for match in result.text_matches:
@@ -138,9 +151,14 @@ class PluginDirectory(object):
                 yield result.repository.full_name, [Shortcut(extracted_shortcut) for extracted_shortcut in extracted_shortcuts]
     
     @staticmethod
+    def _fetch_shortcuts_plugin_plugin_bundle(directory, repo_limit):
+        return [];
+
+    @staticmethod
     def _search_old_style_plugin(directory, repo_limit):
         from itertools import chain
-        PluginDirectory._github_login()
+        if PluginDirectory.gh is None:
+            PluginDirectory._github_login()
         sub_queries = PluginDirectory._build_search_query_repos_string(directory, repo_limit=repo_limit)
         search_results = []
         for sub_q in sub_queries:

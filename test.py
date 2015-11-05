@@ -55,17 +55,22 @@ abynim/BaseAlign:  __Apply__.
 ![Configuration Window](config_dialog.png)'''
         self.assertEqual(pd._extract_shortcuts_old_style_from_text(text)[0], 'shift cmd o')
         
+    def test_fetch_and_add_shortcuts_to_repo(self):
+        pd._fetch_and_add_shortcuts_to_directory(self.repos, self.repo_limit)
+        self.assertEqual(len(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts), 1)
+        self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts[0].to_string(), 'shift + command + o')
+
     def test_get_shortcuts_old_style(self):
         pass
 
     def test_add_shortcuts_to_directory(self):
-        repo_shortcuts = pd._get_shortcuts_old_style(self.repos, self.repo_limit)
-        pd.add_shortcuts_to_directory(self.repos, repo_shortcuts)
+        repo_shortcuts = pd._fetch_shortcuts_old_style(self.repos, self.repo_limit)
+        pd._add_shortcuts_to_directory(self.repos, repo_shortcuts)
         self.assertEqual(len(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts), 1)
         self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts[0].to_string(), 'shift + command + o')
 
     def test_add_shortcuts_for_repo_to_directory(self):
-        repo_shortcuts = pd._get_shortcuts_old_style(self.repos, self.repo_limit)
+        repo_shortcuts = pd._fetch_shortcuts_old_style(self.repos, self.repo_limit)
         for r, s in repo_shortcuts:
             pd._add_shortcuts_for_repo_to_directory(self.repos, r, s)
             self.assertEqual(self.repos[r].shortcuts, s)
@@ -74,8 +79,8 @@ abynim/BaseAlign:  __Apply__.
         self.assertNotEqual(pd._get_github_token(), '')
 
     def test_freeze_thaw(self):
-        pd.freeze(self.repos)
-        thawed_repos = pd.thaw()
+        pd._freeze(self.repos)
+        thawed_repos = pd._thaw()
         self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].description, thawed_repos['adamhowell/random-opacity-sketch-plugin'].description)
 
 

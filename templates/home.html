@@ -22,8 +22,8 @@
                     <p>{{shortcut.to_string()}}</p>
                 {% endfor %}
             </td>
-            <td><a href="{{ plugin.url }}">{{ plugin.name.decode('utf-8') }}</a></td>
-            <td>{{ plugin.description.decode('utf-8') }}</td>
+            <td><a href="{{ plugin.url }}">{{ plugin.name }}</a></td>
+            <td>{{ plugin.description }}</td>
         </tr>
     {% endfor %}
   </tbody>

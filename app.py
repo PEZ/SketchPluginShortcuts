@@ -29,9 +29,7 @@ def home():
 def apport():
     """Fetch shortcuts and render"""
     from plugin_directory import PluginDirectory as pd
-    plugins = pd.fetch_directory()
-    repo_shortcuts = pd._get_shortcuts_old_style(plugins, 40)
-    pd.add_shortcuts_to_directory(plugins, repo_shortcuts)
+    plugins = pd.fetch_directory(pd.REPO_SEARCH_LIMIT)
     return render_template('apport.html', plugins=sorted(plugins.values()))
 
 @app.route('/about/')
