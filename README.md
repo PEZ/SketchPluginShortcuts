@@ -1,223 +1,54 @@
-Flask Heroku
-============
+# Sketch Plugin Shortcuts Inventory
 
-<pre><code>
+(The source code for this [listing of Sketch plugin shortcuts](http:pluginshortcuts.herokuapp.com).)
 
+## Work in progress
 
-             ##
- #########  ###
-  ##     #   ##                     :GG   DG
-  ##         ##                     :EE   EE                        ;E
-  ##         ##                     :EE  KK                         ;E
-  ##         ##                     :EE                             ;E
-  ##   #     ##     ####     ####   :EEEEEEG   KEEEE     WE  WEEE;  ;E   EE EE   EE  
-  ######     ##    ##  #f   #   #   :EE   EE  GEf;tEK  EEKK EEfiEE, ;E  fE  EE   EE  
-  ##   #     ##        #l   ##            EE  KE   tE  EK   E;   EE ;E  E,  EE   EE  
-  ##         ##       ##a    ###          EK  EEEEEEE  EK   E    KE ;EEEE   EE   EE  
-  ##         ##    ##  #s     ###         EK  EE       EK   E    KE ;E EE   EE   EE  
-  ##         ##   ##   #k       ##   E    EE  EE       EK   E,   EK ;E  KE  EE   EE  
-  ##         ##   ##   ##W  #   #:   E    EK  ;EK.,EK  EK   EE,:EE, ;E   ED KE.,EEE  
- #####      #####  ### W#   ####,         EK   ,KEEE   K#    DEEK.  iK   WK  KEEE.   
+The main thing missing is that the listing fails to gather all shortcuts for all the plugin directories. This is becauase I currently rely on the `matched_text` fragment from the GitHub search API. The fragment contains at most two matches and also sometimes misses to include the shortcut information even for those matches. The fix will probably be to use GitHub's Content API to scan the `manifest.json` files.
 
+## Contribute
 
-                    github.com/zachwill/flask_heroku
+The project is based on [zachwill's](https://github.com/zachwill/) template for [Flask based Heroku apps](https://github.com/zachwill/flask_heroku).
 
-</code></pre>
+In addition to that the project uses GitHub API and you will need to use a configuration variable with your GitHUB API Token. Locally create a `.env` file and add:
 
+    GITHUB_TOKEN=your-token
 
-What is this?
--------------
+For Heroku do:
 
-A template to get your [Flask](http://flask.pocoo.org/) app running on
-[Heroku](https://www.heroku.com/) as fast as possible. For added
-convenience, the templates use [Twitter's Bootstrap
-project](http://twitter.github.com/bootstrap/) to help reduce the amount
-of time it's takes you as a developer to go from an idea to a working
-site.
+    heroku config:set GITHUB_TOKEN=your-token
 
-All of the CSS stylesheets are written using the [Less
-CSS](http://lesscss.org/) syntax (even Bootstrap's CSS). If you're using
-Mac OS X for development, make sure to check out [incident57's
-Less.app](http://incident57.com/less/).
+I also use `redis` for storing the shortcut directory JSON blob. You'll need to install that on your dev machine and add the `Redis To Go` addon to your Heroku app. The free `nano` tier works for this project:
 
-Alternatively, there's a [Less binary
-compiler](https://github.com/cloudhead/less.js/) that works similarly on
-the commandline, or you can always use the [`less.js`
-script](https://github.com/cloudhead/less.js/) in your website otherwise
--- it's incredibly fast. For instance, if you visit the [Less CSS
-site](http://lesscss.org), notice that it doesn't link to any CSS files.
+    heroku addons:create redistogo:nano
 
-Lastly, in Heroku's production environment, your Flask application will
-be served through [`gunicorn`](http://gunicorn.org/) and
-[`gevent`](http://www.gevent.org/).
+In order to run the actual fetching of the shortcut information (the `/apport` route), you will also need these variables configured in the `.env` file and on Heroku:
 
+    ADMIN_USER_NAME=your-admin-user-name
+    ADMIN_USER_PASSWORD=your-admin-user-password
 
-Why should I use this?
-----------------------
+In order for my local machine to read the `.env` variables and otherwise mimic the Heroku environment as much as possinble I start the server like so:
 
-Everything I've learned from writing and maintaining the [Flask
-Engine](https://github.com/zachwill/flask-engine) template for Google
-App Engine has made its way into this repo, too. The goal is to make a
-simple repo that can be cloned and added to for the majority of projects
-going forward, while also staying minimal in size and complexity.
+    heroku local:run foreman run python app.py
 
+### Tests
 
-Instructions
-------------
+For similar reasons as with the web app I also use `heroku local` for running the tests:
 
-First, you'll need to clone the repo.
+    heroku local:run python test.py
 
-    $ git clone git@github.com:zachwill/flask_heroku.git
-    $ cd flask_heroku
+(All other ways of running the tests in a "Heroku-ish" manner I tried caused me to lose the traceback frames for failing tests.) 
 
-Second, let's download `pip`, `virtualenv`, `foreman`, and the [`heroku`
-Ruby gem](http://devcenter.heroku.com/articles/using-the-cli).
+There's also a `testapp.py` for checking that the Flask app is sane:
 
-    $ sudo easy_install pip
-    $ sudo pip install virtualenv
-    $ sudo gem install foreman heroku
+    heroku local:run python testapp.py
 
-Now, you can setup an isolated environment with `virtualenv`.
+(It doesn't test the fetching of shortcuts info yet, since I haven't figured out how to not spam the GitHub API)
 
-    $ virtualenv --no-site-packages env
-    $ source env/bin/activate
+**NB: The tests are a bit stupid** as I have had problems figuring out how to best factor both the tests and the code under test because of the dependencies to the GitHub API and some other things. Contributions on this area is very welcome! There are also a lot of tests missing.
 
+## Contact
 
-Installing Packages
---------------------
+I'm [https://twitter.com/cobpez](@CoBPEZ) on Twitter.
 
-### Gevent
-
-To use `gevent`, we'll need to install `libevent` for the
-`gevent` production server. If you're operating on a Linux OS, you can
-`apt-get install libevent-dev`. If you're using Mac OS X, consider
-installing the [homebrew](http://mxcl.github.com/homebrew/) package
-manager, and run the following command:
-
-    $ brew install libevent
-
-If you're using Mac OS X, you can also install `libevent` through [a DMG
-available on Rudix](http://rudix.org/packages-jkl.html#libevent).
-
-
-### Without Gevent
-
-If you'd rather use `gunicorn` without `gevent`, you just need to edit
-the `Procfile` and `requirements.txt`.
-
-First, edit the `Procfile` to look the following:
-
-    web: gunicorn -w 4 -b "0.0.0.0:$PORT" app:app
-
-Second, remove `gevent` from the `requirements.txt` file.
-
-### pip
-
-Then, let's get the requirements installed in your isolated test
-environment.
-
-    $ pip install -r requirements.txt
-
-
-Running Your Application
-------------------------
-
-Now, you can run the application locally.
-
-    $ foreman start
-
-You can also specify what port you'd prefer to use.
-
-    $ foreman start -p 5555
-
-
-Deploying
----------
-
-If you haven't [signed up for Heroku](https://api.heroku.com/signup), go
-ahead and do that. You should then be able to [add your SSH key to
-Heroku](http://devcenter.heroku.com/articles/quickstart), and also
-`heroku login` from the commandline.
-
-Now, to upload your application, you'll first need to do the
-following -- and obviously change `app_name` to the name of your
-application:
-
-    $ heroku create app_name -s cedar
-
-And, then you can push your application up to Heroku.
-
-    $ git push heroku master
-    $ heroku scale web=1
-
-Finally, we can make sure the application is up and running.
-
-    $ heroku ps
-
-Now, we can view the application in our web browser.
-
-    $ heroku open
-
-And, to deactivate `virtualenv` (once you've finished coding), you
-simply run the following command:
-
-    $ deactivate
-
-
-Next Steps
-----------
-
-After you've got your application up and running, there a couple next
-steps you should consider following.
-
-1. Create a new `README.md` file.
-2. Add your Google Analytics ID to the `base.html` template.
-3. Adjust the `author` and `description` `<meta>` tags in the
-   `base.html` template.
-4. Change the `humans.txt` and `favicon.ico` files in the `static`
-   directory.
-5. Change the `apple-touch` icons in the `static` directory.
-
-
-Reactivating the Virtual Environment
-------------------------------------
-
-If you haven't worked with `virtualenv` before, you'll need to
-reactivate the environment everytime you close or reload your terminal.
-
-    $ source env/bin/activate
-
-If you don't reactivate the environment, then you'll probably receive a
-screen full of errors when trying to run the application locally.
-
-
-Adding Requirements
--------------------
-
-In the course of creating your application, you may find yourself
-installing various Python modules with `pip` -- in which case you'll
-need to update the `requirements.txt` file. One way that this can be
-done is with `pip freeze`.
-
-    $ pip freeze > requirements.txt
-
-
-Custom Domains
---------------
-
-If your account is verified -- and your credit card is on file -- you
-can also easily add a custom domain to your application.
-
-    $ heroku addons:add custom_domains
-    $ heroku domains:add www.mydomainname.com
-
-You can add a [naked domain
-name](http://devcenter.heroku.com/articles/custom-domains), too.
-
-    $ heroku domains:add mydomainname.com
-
-Lastly, add the following A records to your DNS management tool.
-
-    75.101.163.44
-    75.101.145.87
-    174.129.212.2
+If you have suggestions please feel invited to file an issue. Pull requests are even more welcome. =)

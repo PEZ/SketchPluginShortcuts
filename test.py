@@ -86,7 +86,7 @@ abynim/BaseAlign:  __Apply__.
         self.assertEqual(len(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts), 1)
         self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts[0].to_string(), 'shift + command + o')
         self.assertEqual(len(self.repos['pez/sketchdistributor'].shortcuts), 2)
-        self.assertEqual(self.repos['pez/sketchdistributor'].shortcuts[0].to_string(), 'control + shift + d')
+        self.assertEqual(self.repos['pez/sketchdistributor'].shortcuts[0].to_string(), 'control + option + d')
 
     def test_add_shortcuts_for_repo_to_directory(self):
         repo_shortcuts = pd._fetch_shortcuts_old_style(self.repos, self.repo_limit)
