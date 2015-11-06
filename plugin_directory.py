@@ -20,6 +20,7 @@ class Shortcut(object):
         self._ctrl = False
         self._option = False
         self._key = ''
+        self._is_duplicate = False
 
         keys = Shortcut.SEPARATOR_RE.split(str(shortcut_string))
         for key in keys:
@@ -47,6 +48,12 @@ class Shortcut(object):
             s = s + 'command + '
         s = s + self._key
         return s
+
+    def is_duplicate(self):
+        return self._is_duplicate
+
+    def mark_as_duplicate(self):
+        self._is_duplicate = True
 
 class Repo(object):
 
@@ -108,8 +115,20 @@ class PluginDirectory(object):
 
     @staticmethod
     def _fetch_and_add_shortcuts_to_directory(directory, repo_limit):
+        def _check_and_manage_duplicates(shortcuts, seen):
+            for shortcut in shortcuts:
+                shortcut_string = shortcut.to_string()
+                if shortcut_string in seen:
+                    seen[shortcut_string].append(shortcut)
+                    for duplicate_shortcut in seen[shortcut_string]:
+                        duplicate_shortcut.mark_as_duplicate()
+                else:
+                    seen[shortcut_string] = [shortcut]
+
+        seen_shortcuts = {}
         for repo_name, shortcuts in PluginDirectory._fetch_shortcuts(directory, repo_limit):
             PluginDirectory._add_shortcuts_for_repo_to_directory(directory, repo_name, shortcuts)
+            _check_and_manage_duplicates(shortcuts, seen_shortcuts)
             yield directory[repo_name]
 
     @staticmethod

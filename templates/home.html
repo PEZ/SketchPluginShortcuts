@@ -8,7 +8,15 @@
 
 {% block main %}
 <h2>Sketch Plugin Shortcuts</h2>
-<p>(NB: Very incomplete so far. For instance it lists at most two shortcuts per repository. At best, often it fails to include even one shortcut.)
+<p>A utility for Sketch plugin developers. It's intended to show which shortcuts are already taken. The table also indicates when there is a duplication issue with a shortcut:</p>
+<ul>
+    <li><code>non-duplicate shortcut</code></li>
+    <li><code class="duplicate">duplicate shortcut</code></li>
+</ul>
+<p><strong>NB: Very incomplete so far.</strong> For instance it lists at most two shortcuts per repository. At best, often it fails to include even one shortcut (But, indeed, if a plugin repository is in this list, it probably has shortcuts. Click the repository link to check out, for now.)</p>
+
+<p>By <a href="https://github.com/PEZ">PEZ</a>. Tweet me any questions: <a href="https://twitter.com/cobpez">@CoBPEZ</a>.</p>
+
 
 <div class="table-responsive">
     <table class="table table-striped">
@@ -22,7 +30,7 @@
             <tr>
                 <td nowrap>
                     {% for shortcut in plugin.shortcuts %}
-                    <p>{{shortcut.to_string()}}</p>
+                    <p><code class="{{ 'duplicate' if shortcut.is_duplicate() else ''}}">{{shortcut.to_string()}}</code></p>
                     {% endfor %}
                 </td>
                 <td><a href="{{ plugin.url }}">{{ plugin.name }}</a></td>

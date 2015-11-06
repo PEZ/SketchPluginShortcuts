@@ -1,11 +1,25 @@
 @import "less/mixins.less";
 
 @pink: #be1a8d;
+@code-color:                  #333;
+@code-bg:                     #f2f2f2;
+@duplicate-color:                  #c7254e;
+@duplicate-bg:                     #f9f2f4;
 
 .custom-highlight{
     background: @pink;
     color: #fff;
     text-shadow: -1px 1px 1px darken(@pink, 15%);
+}
+
+code{
+    color: @code-color;
+    background: @code-bg;
+}
+
+.duplicate{
+    color: @duplicate-color;
+    background: @duplicate-bg;
 }
 
 /* Apply custom highlight */

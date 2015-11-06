@@ -21,7 +21,7 @@
             <tr>
                 <td>
                     {% for shortcut in plugin.shortcuts %}
-                    <p>{{shortcut.to_string()}}</p>
+                    <p><span{{ 'class="warning"' if shortcut.is_duplicate() }}>{{shortcut.to_string()}}</span></p>
                     {% endfor %}
                 </td>
                 <td><a href="{{ plugin.url }}">{{ plugin.name.decode('utf-8') }}</a></td>
