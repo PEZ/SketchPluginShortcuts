@@ -30,14 +30,14 @@ A list of Sketch plugins hosted at GitHub, in alphabetical order.
 - [PEZ/SketchDistributor](https://github.com/pez/sketchdistributor) Distribute selection objects vertically or horizontally with a given spacing between them.
 - [utom/sketch-measure](https://github.com/utom/sketch-measure) A measure tool for Sketch.app (think Specctr for Sketch)
 '''
-        self.repos = pd._get_directory(self.plugins_raw)
+        self.repos = pd._extract_directory(self.plugins_raw)
         self.repo_limit = 5
 
     def test_extract_repos(self):
         self.assertEqual(len(self.repos), 13)
         self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].name, 'adamhowell/random-opacity-sketch-plugin')
         self.assertEqual(self.repos['47deg/pointgrid'].url, 'https://github.com/47deg/pointgrid')
-        self.assertEqual(self.repos['ajaaibu/ThaanaText'].description, '''Sketch Plugin to generate thaana strings, paragraphs, articles.''')
+        self.assertEqual(self.repos['ajaaibu/thaanatext'].description, '''Sketch Plugin to generate thaana strings, paragraphs, articles.''')
 
     def test_build_search_query_repos_string(self):
         queries = list(pd._build_search_query_repos_string(self.repos, self.repo_limit))
@@ -55,19 +55,38 @@ abynim/BaseAlign:  __Apply__.
 ![Configuration Window](config_dialog.png)'''
         self.assertEqual(pd._extract_shortcuts_old_style_from_text(text)[0], 'shift cmd o')
         
+    def test_extract_shortcut_plugin_bundle_from_text(self):
+        text = '''      "handler" : "onRun",
+      "shortcut" : "shift ctrl d",
+      "name" : "Distribute ...",
+      "identifier" : "distributor"
+    },
+    {
+      "script" : "script.cocoascript",
+      "handler" : "onRepeat",
+      "shortcut" : "shift ctrl a",
+      "name" : "Distribute again", '''
+        shortcuts = pd._extract_shortcuts_plugin_bundle_from_text(text) 
+        self.assertEqual(len(shortcuts), 2)
+        self.assertEqual(shortcuts[0], 'shift ctrl d')
+        
     def test_fetch_and_add_shortcuts_to_repo(self):
-        pd._fetch_and_add_shortcuts_to_directory(self.repos, self.repo_limit)
-        self.assertEqual(len(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts), 1)
-        self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts[0].to_string(), 'shift + command + o')
+        test_repo_name = 'adamhowell/random-opacity-sketch-plugin'
+        for repo in pd._fetch_and_add_shortcuts_to_directory(self.repos, self.repo_limit):
+            if repo.name == test_repo_name:
+                self.assertEqual(len(self.repos[test_repo_name].shortcuts), 1)
+                self.assertEqual(self.repos[test_repo_name].shortcuts[0].to_string(), 'shift + command + o')
 
     def test_get_shortcuts_old_style(self):
         pass
 
     def test_add_shortcuts_to_directory(self):
-        repo_shortcuts = pd._fetch_shortcuts_old_style(self.repos, self.repo_limit)
+        repo_shortcuts = pd._fetch_shortcuts(self.repos, self.repo_limit)
         pd._add_shortcuts_to_directory(self.repos, repo_shortcuts)
         self.assertEqual(len(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts), 1)
         self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts[0].to_string(), 'shift + command + o')
+        self.assertEqual(len(self.repos['pez/sketchdistributor'].shortcuts), 2)
+        self.assertEqual(self.repos['pez/sketchdistributor'].shortcuts[0].to_string(), 'control + shift + d')
 
     def test_add_shortcuts_for_repo_to_directory(self):
         repo_shortcuts = pd._fetch_shortcuts_old_style(self.repos, self.repo_limit)
@@ -90,11 +109,11 @@ from plugin_directory import Shortcut
 class TestShortcut(unittest.TestCase):
 
     def test_get_shortcut(self):
-        self.assertEquals(Shortcut('ctrl shift a').to_string(), 'ctrl + shift + a')
-        self.assertEquals(Shortcut('shift ctrl a').to_string(), 'ctrl + shift + a')
-        self.assertEquals(Shortcut('ctrl shift cmd option 7').to_string(), 'ctrl + shift + option + command + 7')
-        self.assertEquals(Shortcut('command ctrl a').to_string(), 'ctrl + command + a')
-        self.assertEquals(Shortcut('CMD ctrl a').to_string(), 'ctrl + command + a')
+        self.assertEquals(Shortcut('ctrl shift a').to_string(), 'control + shift + a')
+        self.assertEquals(Shortcut('shift ctrl a').to_string(), 'control + shift + a')
+        self.assertEquals(Shortcut('ctrl shift cmd option 7').to_string(), 'control + shift + option + command + 7')
+        self.assertEquals(Shortcut('command ctrl a').to_string(), 'control + command + a')
+        self.assertEquals(Shortcut('CMD ctrl a').to_string(), 'control + command + a')
 
 
     

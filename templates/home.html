@@ -1,31 +1,35 @@
 {% extends "base.html" %}
 
 
+{% block title %}Sketch Plugin Shortcuts{% endblock %}
 {% block js %}
 {% endblock %}
 
 
 {% block main %}
-<h2>Plugins</h2>
+<h2>Sketch Plugin Shortcuts</h2>
+<p>(NB: Very incomplete so far. For instance it lists at most two shortcuts per repository. At best, often it fails to include even one shortcut.)
 
-<table>
-  <thead>
-    <th>Shortcuts</th>
-    <th>Plugin</th>
-    <th>Description</th>
-  </thead>
-  <tbody>
-    {% for plugin in plugins %}
-        <tr>
-            <td>
-                {% for shortcut in plugin.shortcuts %}
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <th>Shortcuts</th>
+            <th>Repository</th>
+            <th>Description</th>
+        </thead>
+        <tbody>
+            {% for plugin in plugins %}
+            <tr>
+                <td nowrap>
+                    {% for shortcut in plugin.shortcuts %}
                     <p>{{shortcut.to_string()}}</p>
-                {% endfor %}
-            </td>
-            <td><a href="{{ plugin.url }}">{{ plugin.name }}</a></td>
-            <td>{{ plugin.description }}</td>
-        </tr>
-    {% endfor %}
-  </tbody>
-</table>
+                    {% endfor %}
+                </td>
+                <td><a href="{{ plugin.url }}">{{ plugin.name }}</a></td>
+                <td>{{ plugin.description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

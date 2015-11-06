@@ -7,12 +7,18 @@ This file creates your application.
 """
 
 import os
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, Response
 
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'this_should_be_configured')
 
+def stream_template(template_name, **context):
+    app.update_template_context(context)
+    t = app.jinja_env.get_template(template_name)
+    rv = t.stream(context)
+    #rv.enable_buffering(5)
+    return rv
 
 ###
 # Routing for your application.
@@ -22,15 +28,15 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'this_should_be_configur
 def home():
     """Render website's home page."""
     from plugin_directory import PluginDirectory as pd
-    plugins = pd.get_directory()
-    return render_template('home.html', plugins=sorted(plugins.values()))
+    plugins = [plugin for plugin in pd.get_directory().values() if len(plugin.shortcuts) > 0]
+    return render_template('home.html', plugins=sorted(plugins, key=lambda p: p.name.lower()))
 
 @app.route('/apport')
 def apport():
     """Fetch shortcuts and render"""
     from plugin_directory import PluginDirectory as pd
     plugins = pd.fetch_directory(pd.REPO_SEARCH_LIMIT)
-    return render_template('apport.html', plugins=sorted(plugins.values()))
+    return Response(stream_template('apport.html', plugins=plugins))
 
 @app.route('/about/')
 def about():

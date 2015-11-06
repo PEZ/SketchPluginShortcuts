@@ -14,21 +14,21 @@ redis = redis.from_url(redis_url)
 class Shortcut(object):
     SEPARATOR_RE = re.compile(r'\s+')
 
-    _shift = False
-    _cmd = False
-    _ctrl = False
-    _option = False
-    _key = ''
-
     def __init__(self, shortcut_string):
+        self._shift = False
+        self._cmd = False
+        self._ctrl = False
+        self._option = False
+        self._key = ''
+
         keys = Shortcut.SEPARATOR_RE.split(str(shortcut_string))
         for key in keys:
             lower_key = key.lower()
             if lower_key in ['cmd', 'command']:
                 self._cmd = True
-            elif lower_key == 'ctrl':
+            elif lower_key in ['ctrl', 'control']:
                 self._ctrl = True
-            elif lower_key == 'option':
+            elif lower_key in ['opt', 'option']:
                 self._option = True
             elif lower_key == 'shift':
                 self._shift = True
@@ -38,7 +38,7 @@ class Shortcut(object):
     def to_string(self):
         s = ''
         if self._ctrl:
-            s = s + 'ctrl + '
+            s = s + 'control + '
         if self._shift:
             s = s + 'shift + '
         if self._option:
@@ -63,7 +63,8 @@ class Repo(object):
 class PluginDirectory(object):
     DIRECTORY_RAW_URL='https://raw.githubusercontent.com/sketchplugins/plugin-directory/master/README.md'
     DIRECTORY_RE = re.compile(r'^- \[(.+?)\]\((.+?)\) (.+)$', re.M)
-    SHORTCUT_OLD_STYLE_RE = re.compile(r'\bshortcut:\s+\(([^)]*?)\)', re.M)
+    SHORTCUT_OLD_STYLE_RE = re.compile(r'\bshortcut:\s*\(([^)]*?)\)', re.M)
+    SHORTCUT_PLUGIN_BUNDLE_RE = re.compile(r'"shortcut"\s*:\s*"([^"]*?)"', re.M)
     FREEZER_KEY = "frozen"
     REPO_SEARCH_LIMIT = 40
 
@@ -85,35 +86,36 @@ class PluginDirectory(object):
 
     @staticmethod
     def fetch_directory(repo_limit):
-        repos = []
-        repos = PluginDirectory._get_directory(urllib2.urlopen(PluginDirectory.DIRECTORY_RAW_URL).read())
-        PluginDirectory._fetch_and_add_shortcuts_to_directory(repos, repo_limit)
+        repos = PluginDirectory._extract_directory(urllib2.urlopen(PluginDirectory.DIRECTORY_RAW_URL).read())
         PluginDirectory._freeze(repos)
-        return repos
+        for repo in PluginDirectory._fetch_and_add_shortcuts_to_directory(repos, repo_limit):
+            yield repo
+            PluginDirectory._freeze(repos)
 
     @staticmethod
     def get_directory():
         return PluginDirectory._thaw()
 
     @staticmethod
-    def _get_directory(raw):
+    def _extract_directory(raw):
         repos = PluginDirectory.DIRECTORY_RE.findall(raw)
-        return {repo[0]: Repo(repo[0], repo[1], repo[2]) for repo in repos}
+        return {repo[0].lower(): Repo(repo[0], repo[1], repo[2]) for repo in repos}
             
     @staticmethod
     def _add_shortcuts_to_directory(directory, repo_shortcuts):
         for r, s in repo_shortcuts:
-            PluginDirectory._add_shortcuts_for_repo_to_directory(directory, r, s)
+            PluginDirectory._add_shortcuts_for_repo_to_directory(directory, r.lower(), s)
 
     @staticmethod
     def _fetch_and_add_shortcuts_to_directory(directory, repo_limit):
-        for repo, shortcuts in PluginDirectory._fetch_shortcuts(directory, repo_limit):
-            PluginDirectory._add_shortcuts_for_repo_to_directory(directory, repo, shortcuts)
+        for repo_name, shortcuts in PluginDirectory._fetch_shortcuts(directory, repo_limit):
+            PluginDirectory._add_shortcuts_for_repo_to_directory(directory, repo_name, shortcuts)
+            yield directory[repo_name]
 
     @staticmethod
-    def _add_shortcuts_for_repo_to_directory(directory, repo, shortcuts):
+    def _add_shortcuts_for_repo_to_directory(directory, repo_name, shortcuts):
         for s in shortcuts:
-            directory[repo].add_shortcut(s)
+            directory[repo_name].add_shortcut(s)
 
     @staticmethod
     def _get_github_token():
@@ -138,7 +140,7 @@ class PluginDirectory(object):
     def _fetch_shortcuts(directory, repo_limit):
         from itertools import chain
         search_results = [PluginDirectory._fetch_shortcuts_old_style(directory, repo_limit)]
-        search_results.append(PluginDirectory._fetch_shortcuts_plugin_plugin_bundle(directory, repo_limit))
+        search_results.append(PluginDirectory._fetch_shortcuts_plugin_bundle(directory, repo_limit))
         return chain.from_iterable(search_results)
 
     @staticmethod
@@ -148,31 +150,44 @@ class PluginDirectory(object):
             for match in result.text_matches:
                 matched_text = match['fragment']
                 extracted_shortcuts = PluginDirectory._extract_shortcuts_old_style_from_text(matched_text)
-                yield result.repository.full_name, [Shortcut(extracted_shortcut) for extracted_shortcut in extracted_shortcuts]
+                if len(extracted_shortcuts) > 0:
+                    yield result.repository.full_name.lower(), [Shortcut(extracted_shortcut) for extracted_shortcut in extracted_shortcuts]
     
     @staticmethod
-    def _fetch_shortcuts_plugin_plugin_bundle(directory, repo_limit):
-        return [];
+    def _fetch_shortcuts_plugin_bundle(directory, repo_limit):
+        search_results = PluginDirectory._search_plugin_bundle(directory, repo_limit=repo_limit)
+        for result in search_results:
+            for match in result.text_matches:
+                matched_text = match['fragment']
+                extracted_shortcuts = PluginDirectory._extract_shortcuts_plugin_bundle_from_text(matched_text)
+                if len(extracted_shortcuts) > 0:
+                    yield result.repository.full_name.lower(), [Shortcut(extracted_shortcut) for extracted_shortcut in extracted_shortcuts]
 
     @staticmethod
-    def _search_old_style_plugin(directory, repo_limit):
+    def _search_plugin_repo(directory, repo_limit, query_prefix, text_match=False):
         from itertools import chain
         if PluginDirectory.gh is None:
             PluginDirectory._github_login()
         sub_queries = PluginDirectory._build_search_query_repos_string(directory, repo_limit=repo_limit)
         search_results = []
         for sub_q in sub_queries:
-            query = "shortcut in:file extension:sketchplugin %s" % sub_q
-            search_results.append(PluginDirectory.gh.search_code(query, text_match=True))
+            query = "%s %s" % (query_prefix, sub_q)
+            search_results.append(PluginDirectory.gh.search_code(query, text_match=text_match))
         return chain.from_iterable(search_results)
 
     @staticmethod
+    def _search_old_style_plugin(directory, repo_limit):
+        return PluginDirectory._search_plugin_repo(directory, repo_limit, "shortcut in:file extension:sketchplugin", text_match=True)
+
+    @staticmethod
     def _search_plugin_bundle(directory, repo_limit):
-        PluginDirectory._github_login()
-        query = "shortcut: in:file filename:manifest extension:json %s" % PluginDirectory._build_search_query_repos_string(directory, repo_limit=repo_limit)
-        return PluginDirectory.gh.search_code(query)
+        return PluginDirectory._search_plugin_repo(directory, repo_limit, "shortcut in:file filename:manifest extension:json", text_match=True)
 
     @staticmethod
     def _extract_shortcuts_old_style_from_text(text):
         return PluginDirectory.SHORTCUT_OLD_STYLE_RE.findall(text)
+
+    @staticmethod
+    def _extract_shortcuts_plugin_bundle_from_text(text):
+        return PluginDirectory.SHORTCUT_PLUGIN_BUNDLE_RE.findall(text)
 

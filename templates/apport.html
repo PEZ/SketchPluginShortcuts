@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 
+{% block title %}Fetching Sketch Plugin Shortcuts{% endblock %}
 {% block js %}
 {% endblock %}
 
@@ -8,24 +9,26 @@
 {% block main %}
 <h2>Plugins</h2>
 
-<table>
-  <thead>
-    <th>Shortcuts</th>
-    <th>Plugin</th>
-    <th>Description</th>
-  </thead>
-  <tbody>
-    {% for plugin in plugins %}
-        <tr>
-            <td>
-                {% for shortcut in plugin.shortcuts %}
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <th class="col-md-3">Shortcuts</th>
+            <th>Plugin</th>
+            <th>Description</th>
+        </thead>
+        <tbody>
+            {% for plugin in plugins %}
+            <tr>
+                <td>
+                    {% for shortcut in plugin.shortcuts %}
                     <p>{{shortcut.to_string()}}</p>
-                {% endfor %}
-            </td>
-            <td><a href="{{ plugin.url }}">{{ plugin.name.decode('utf-8') }}</a></td>
-            <td>{{ plugin.description.decode('utf-8') }}</td>
-        </tr>
-    {% endfor %}
-  </tbody>
-</table>
+                    {% endfor %}
+                </td>
+                <td><a href="{{ plugin.url }}">{{ plugin.name.decode('utf-8') }}</a></td>
+                <td>{{ plugin.description.decode('utf-8') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
