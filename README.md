@@ -2,9 +2,11 @@
 
 (The source code for this [listing of Sketch plugin shortcuts](http:pluginshortcuts.herokuapp.com).)
 
+This project is meant for developers of Sketch plugins who want to add non-conflicting keyboard shortcuts for their plugins.
+
 ## Work in progress
 
-The main thing missing is that the listing fails to gather all shortcuts for all the plugin directories. This is becauase I currently rely on the `matched_text` fragment from the GitHub search API. The fragment contains at most two matches and also sometimes misses to include the shortcut information even for those matches. The fix will probably be to use GitHub's Content API to scan the `manifest.json` files.
+It's currently quite crude and begs for some sorting and filtering of the listing and whatnot. Also I'm thinking it should maybe provide an API that could be used for automatic duplication checking.
 
 ## Contribute
 
