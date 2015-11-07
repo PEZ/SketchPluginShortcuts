@@ -22,7 +22,7 @@ class Shortcut(object):
         self._key = ''
         self._is_duplicate = False
 
-        keys = Shortcut.SEPARATOR_RE.split(str(shortcut_string))
+        keys = Shortcut.SEPARATOR_RE.split(shortcut_string)
         for key in keys:
             lower_key = key.lower()
             if lower_key in ['cmd', 'command']:
@@ -216,9 +216,9 @@ class PluginDirectory(object):
 
     @staticmethod
     def _extract_shortcuts_old_style_from_text(text):
-        return PluginDirectory.SHORTCUT_OLD_STYLE_RE.findall(text)
+        return [extracted.decode('utf-8') for extracted in PluginDirectory.SHORTCUT_OLD_STYLE_RE.findall(text)]
 
     @staticmethod
     def _extract_shortcuts_plugin_bundle_from_text(text):
-        return [extracted for extracted in PluginDirectory.SHORTCUT_PLUGIN_BUNDLE_RE.findall(text) if extracted.strip() != '']
+        return [extracted.decode('utf-8') for extracted in PluginDirectory.SHORTCUT_PLUGIN_BUNDLE_RE.findall(text) if extracted.strip() != '']
 
