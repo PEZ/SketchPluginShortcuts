@@ -106,4 +106,7 @@ def page_not_found(error):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug = False
+    if os.environ.get('RUNTIME_ENVIRONMENT', '') == 'development':
+        debug = True
+    app.run(debug=debug)

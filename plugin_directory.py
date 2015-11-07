@@ -141,6 +141,11 @@ class PluginDirectory(object):
         return os.environ.get('GITHUB_TOKEN','')
 
     @staticmethod
+    def _authorized_github_api_read(url):
+        req = urllib2.Request(url, headers={'Authorization': 'token %s' % PluginDirectory._get_github_token()});
+        return urllib2.urlopen(req).read()
+
+    @staticmethod
     def _build_search_query_repos_string(directory, repo_limit):
         repo_names = sorted(directory.keys(), key=lambda v: v.lower())
         cursor = 0
@@ -172,11 +177,6 @@ class PluginDirectory(object):
                 if len(extracted_shortcuts) > 0:
                     yield result.repository.full_name.lower(), [Shortcut(extracted_shortcut) for extracted_shortcut in extracted_shortcuts]
     
-    @staticmethod
-    def _authorized_github_api_read(url):
-        req = urllib2.Request(url, headers={'Authorization': 'token %s' % PluginDirectory._get_github_token()});
-        return urllib2.urlopen(req).read()
-
     @staticmethod
     def _fetch_manifest_text_from_git_url(git_url):
         import json
