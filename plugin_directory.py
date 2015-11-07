@@ -71,7 +71,7 @@ class PluginDirectory(object):
     DIRECTORY_RAW_URL='https://raw.githubusercontent.com/sketchplugins/plugin-directory/master/README.md'
     DIRECTORY_RE = re.compile(r'^- \[(.+?)\]\((.+?)\) (.+)$', re.M)
     SHORTCUT_OLD_STYLE_RE = re.compile(r'\bshortcut:\s*\(([^)]*?)\)', re.M)
-    SHORTCUT_PLUGIN_BUNDLE_RE = re.compile(r'"shortcut"\s*:\s*"([^"]*?)"', re.M)
+    SHORTCUT_PLUGIN_BUNDLE_RE = re.compile(r'"shortcut"\s*:\s*"([^"]+?)"', re.M)
     FREEZER_KEY = "frozen"
     REPO_SEARCH_LIMIT = 40
 
@@ -93,7 +93,7 @@ class PluginDirectory(object):
 
     @staticmethod
     def fetch_directory(repo_limit):
-        repos = PluginDirectory._extract_directory(urllib2.urlopen(PluginDirectory.DIRECTORY_RAW_URL).read())
+        repos = PluginDirectory._extract_directory(PluginDirectory._authorized_github_api_read(PluginDirectory.DIRECTORY_RAW_URL))
         PluginDirectory._freeze(repos)
         for repo in PluginDirectory._fetch_and_add_shortcuts_to_directory(repos, repo_limit):
             yield repo
@@ -173,12 +173,24 @@ class PluginDirectory(object):
                     yield result.repository.full_name.lower(), [Shortcut(extracted_shortcut) for extracted_shortcut in extracted_shortcuts]
     
     @staticmethod
+    def _authorized_github_api_read(url):
+        req = urllib2.Request(url, headers={'Authorization': 'token %s' % PluginDirectory._get_github_token()});
+        return urllib2.urlopen(req).read()
+
+    @staticmethod
+    def _fetch_manifest_text_from_git_url(git_url):
+        import json
+        from base64 import b64decode
+        content_dict = json.loads(PluginDirectory._authorized_github_api_read(git_url))
+        return b64decode(content_dict['content'])
+
+    @staticmethod
     def _fetch_shortcuts_plugin_bundle(directory, repo_limit):
         search_results = PluginDirectory._search_plugin_bundle(directory, repo_limit=repo_limit)
         for result in search_results:
-            for match in result.text_matches:
-                matched_text = match['fragment']
-                extracted_shortcuts = PluginDirectory._extract_shortcuts_plugin_bundle_from_text(matched_text)
+            if result.path.endswith('.sketchplugin/Contents/Sketch/manifest.json'):
+                text = PluginDirectory._fetch_manifest_text_from_git_url(result.git_url)
+                extracted_shortcuts = PluginDirectory._extract_shortcuts_plugin_bundle_from_text(text)
                 if len(extracted_shortcuts) > 0:
                     yield result.repository.full_name.lower(), [Shortcut(extracted_shortcut) for extracted_shortcut in extracted_shortcuts]
 
@@ -200,7 +212,7 @@ class PluginDirectory(object):
 
     @staticmethod
     def _search_plugin_bundle(directory, repo_limit):
-        return PluginDirectory._search_plugin_repo(directory, repo_limit, "shortcut in:file filename:manifest extension:json", text_match=True)
+        return PluginDirectory._search_plugin_repo(directory, repo_limit, "shortcut in:file filename:manifest extension:json", text_match=False)
 
     @staticmethod
     def _extract_shortcuts_old_style_from_text(text):
@@ -208,5 +220,5 @@ class PluginDirectory(object):
 
     @staticmethod
     def _extract_shortcuts_plugin_bundle_from_text(text):
-        return PluginDirectory.SHORTCUT_PLUGIN_BUNDLE_RE.findall(text)
+        return [extracted for extracted in PluginDirectory.SHORTCUT_PLUGIN_BUNDLE_RE.findall(text) if extracted.strip() != '']
 

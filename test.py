@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 """Tests for the Plugin directory shortcuts service"""
 
@@ -27,6 +28,7 @@ A list of Sketch plugins hosted at GitHub, in alphabetical order.
 - [adamhowell/random-opacity-sketch-plugin](https://github.com/adamhowell/random-opacity-sketch-plugin) Randomly change the opacity of selected objects in Sketch.
 - [ajaaibu/ThaanaText](https://github.com/ajaaibu/thaanatext) Sketch Plugin to generate thaana strings, paragraphs, articles.
 - [alessndro/sketch-plugins](https://github.com/alessndro/sketch-plugins) An incredible collection of plugins, including some great ones for working with baselines.
+- [PEZ/Sketch-Plugin-Testing-Repo](https://github.com/pez/sketch-plugin-testing-repo) testing only
 - [PEZ/SketchDistributor](https://github.com/pez/sketchdistributor) Distribute selection objects vertically or horizontally with a given spacing between them.
 - [utom/sketch-measure](https://github.com/utom/sketch-measure) A measure tool for Sketch.app (think Specctr for Sketch)
 '''
@@ -34,7 +36,7 @@ A list of Sketch plugins hosted at GitHub, in alphabetical order.
         self.repo_limit = 5
 
     def test_extract_repos(self):
-        self.assertEqual(len(self.repos), 13)
+        self.assertEqual(len(self.repos), 14)
         self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].name, 'adamhowell/random-opacity-sketch-plugin')
         self.assertEqual(self.repos['47deg/pointgrid'].url, 'https://github.com/47deg/pointgrid')
         self.assertEqual(self.repos['ajaaibu/thaanatext'].description, '''Sketch Plugin to generate thaana strings, paragraphs, articles.''')
@@ -56,26 +58,134 @@ abynim/BaseAlign:  __Apply__.
         self.assertEqual(pd._extract_shortcuts_old_style_from_text(text)[0], 'shift cmd o')
         
     def test_extract_shortcut_plugin_bundle_from_text(self):
-        text = '''      "handler" : "onRun",
-      "shortcut" : "shift ctrl d",
-      "name" : "Distribute ...",
-      "identifier" : "distributor"
-    },
-    {
-      "script" : "script.cocoascript",
-      "handler" : "onRepeat",
-      "shortcut" : "shift ctrl a",
-      "name" : "Distribute again", '''
+        text = '''{
+          "name": "Sketch Mate",
+          "description": "These plugins will make you best friends with Sketch",
+          "author": "Florian Schulz",
+          "homepage": "https://github.com/getflourish/Sketch-Mate",
+          "version": 1.0,
+          "identifier": "com.getflourish.sketch.mate",
+          "updateURL": "https://github.com/downloads/example/sketchplugins/sketchplugins.json",
+          "compatibleVersion": 3.3,
+          "bundleVersion": 1,
+          "commands": [
+
+            {
+              "name": "Duplicate Artboard",
+              "identifier": "com.getflourish.mate.artboards.duplicate",
+              "shortcut": "shift command d",
+              "script": "Artboards/Duplicate Artboard.js"
+            },
+            {
+              "name": "Fit Artboard",
+              "identifier": "com.getflourish.mate.artboards.fitArtboard",
+              "shortcut": "",
+              "script": "Artboards/Fit Artboard.js"
+            },
+            {
+              "name": "Remove Artboard",
+              "identifier": "com.getflourish.mate.artboards.remove",
+              "shortcut": "cmd shift ⌫",
+              "script": "Artboards/Remove Artboard.js"
+            },
+            {
+              "name": "Sort Artboards by Position",
+              "identifier": "com.getflourish.mate.artboards.sortByPosition",
+              "shortcut": "",
+              "script": "Artboards/Sort Artboards by Position.js"
+            },
+
+            {
+              "name": "Goto Artboard",
+              "identifier": "com.getflourish.mate.misc.gotoArtboard",
+              "shortcut": " ",
+              "script": "Misc/Goto Artboard.js"
+            },
+            {
+              "name": "Distribute Horizontally",
+              "identifier": "com.getflourish.mate.smartAlign.distributeHorizontally",
+              "shortcut": "control option cmd ,",
+              "script": "Smart Align/Distribute Horizontally.js"
+            },
+            {
+              "name": "Distribute Vertically",
+              "identifier": "com.getflourish.mate.smartAlign.distributeVertically",
+              "shortcut": "control option cmd .",
+              "script": "Smart Align/Distribute Vertically.js"
+            },
+            {
+              "name": "Space Horizontally",
+              "identifier": "com.getflourish.mate.smartAlign.spaceHorizontally",
+              "shortcut": "command Ö",
+              "script": "Smart Align/Space Horizontally.js"
+            },
+            {
+              "name": "Space Vertically",
+              "identifier": "com.getflourish.mate.smartAlign.spaceVertically",
+              "shortcut": "command Ä",
+              "script": "Smart Align/Space Vertically.js"
+            },
+            {
+              "name": "Pull Up",
+              "identifier": "com.getflourish.mate.smartMove.pullUp",
+              "shortcut": "shift cmd option ↑",
+              "script": "Smart Move/Pull Up.js"
+            },
+            {
+              "name": "Push Down",
+              "identifier": "com.getflourish.mate.smartMove.pushDown",
+              "shortcut": "shift cmd option ↓",
+              "script": "Smart Move/Push Down.js"
+            },
+            {
+              "name": "Pull Left",
+              "identifier": "com.getflourish.mate.smartMove.pullLeft",
+              "shortcut": "shift cmd option ←",
+              "script": "Smart Move/Pull Left.js"
+            },
+            {
+              "name": "Push Right",
+              "identifier": "com.getflourish.mate.smartMove.pushRight",
+              "shortcut": "shift cmd option →",
+              "script": "Smart Move/Push Right.js"
+            }
+
+          ],
+          "menu": {
+            "items": [
+                {
+                   "title": "Artboards",
+                   "items": [ '''
         shortcuts = pd._extract_shortcuts_plugin_bundle_from_text(text) 
-        self.assertEqual(len(shortcuts), 2)
-        self.assertEqual(shortcuts[0], 'shift ctrl d')
-        
+        self.assertEqual(len(shortcuts), 10)
+        self.assertEqual(shortcuts[0], 'shift command d')
+        self.assertEqual(shortcuts[1], 'cmd shift ⌫')
+        self.assertEqual(shortcuts[2], 'control option cmd ,')
+        self.assertEqual(shortcuts[3], 'control option cmd .')
+        self.assertEqual(shortcuts[4], 'command Ö')
+        self.assertEqual(shortcuts[5], 'command Ä')
+        self.assertEqual(shortcuts[6], 'shift cmd option ↑')
+        self.assertEqual(shortcuts[7], 'shift cmd option ↓')
+        self.assertEqual(shortcuts[8], 'shift cmd option ←')
+        self.assertEqual(shortcuts[9], 'shift cmd option →')
+
     def test_fetch_and_add_shortcuts_to_repo(self):
-        test_repo_name = 'adamhowell/random-opacity-sketch-plugin'
+        test_repo_name = 'PEZ/Sketch-Plugin-Testing-Repo'
         for repo in pd._fetch_and_add_shortcuts_to_directory(self.repos, self.repo_limit):
+            print repo.name
             if repo.name == test_repo_name:
+                print repo.name
                 self.assertEqual(len(self.repos[test_repo_name].shortcuts), 1)
-                self.assertEqual(self.repos[test_repo_name].shortcuts[0].to_string(), 'shift + command + o')
+                self.assertEqual(self.repos[test_repo_name].shortcuts[0].to_string(), 'shift + command + d')
+                self.assertEqual(self.repos[test_repo_name].shortcuts[1].to_string(), 'shift + command + ⌫')
+                self.assertEqual(self.repos[test_repo_name].shortcuts[2].to_string(), 'control + option + command + ,')
+                self.assertEqual(self.repos[test_repo_name].shortcuts[3].to_string(), 'control + option + command + .')
+                self.assertEqual(self.repos[test_repo_name].shortcuts[4].to_string(), 'command + Ö')
+                self.assertEqual(self.repos[test_repo_name].shortcuts[5].to_string(), 'command + Ä')
+                self.assertEqual(self.repos[test_repo_name].shortcuts[6].to_string(), 'shift + option + command + ↑')
+                self.assertEqual(self.repos[test_repo_name].shortcuts[7].to_string(), 'shift + option + command + ↓')
+                self.assertEqual(self.repos[test_repo_name].shortcuts[8].to_string(), 'shift + option + command + ←')
+                self.assertEqual(self.repos[test_repo_name].shortcuts[9].to_string(), 'shift + option + command + →')
 
     def test_get_shortcuts_old_style(self):
         pass
