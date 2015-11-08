@@ -10,28 +10,80 @@ It's currently quite crude and begs for some sorting and filtering of the listin
 
 ## Contribute
 
-The project is based on [zachwill's](https://github.com/zachwill/) template for [Flask based Heroku apps](https://github.com/zachwill/flask_heroku).
+Fork the repository on GitHub. Then clone your fork:
 
-In addition to that the project uses GitHub API and you will need to use a configuration variable with your GitHUB API Token. Locally create a `.env` file and add:
+    $ git clone git@github.com:<you>/<your fork>.git
+    $ cd <your fork>
+
+Then install `pip`, `foreman` and `heroku`. I'm on OS X and prefer to use `homebrew` when I can. In this case only `pip` has a tap, so:
+
+    $ brew install pip
+    $ pip install --upgrade pip setuptools
+
+    $ sudo gem install foreman heroku
+
+Further, `redis` is used for storing the shortcut directory JSON blob. You'll need to install that on your dev machine. Using `homebrew` that becomes:
+
+    $ brew install redis
+
+Homebrew instructs you on how to start the redis server.
+
+Now, setup an isolated environment with `virtualenv`:
+
+    $ virtualenv --no-site-packages env
+    $ . env/bin/activate
+
+You should see your prompt return with a prefix of `(env)`. Now install requirements into your isolated environment:
+
+    $ pip install -r requirements.txt
+
+The project is based on [zachwill's](https://github.com/zachwill/) template for [Flask based Heroku apps](https://github.com/zachwill/flask_heroku). Have a look at that project's`README` for a discussion on how to deactivate and reactibvate the `virtualenv`environment.
+
+The shortcut information is grabbed from GitHub via the GitHub API. You will need a personal GitHub access token. [Read here how to create one.](https://help.github.com/articles/creating-an-access-token-for-command-line-use/) Then update the `GITHUB_TOKEN` configuration variable with your GitHUB API Token. Locally create a `.env` file and add:
 
     GITHUB_TOKEN=your-token
 
-For Heroku do:
+You can now grab the shorcut data from GitHub. There's a `fabric` task for that:
 
-    heroku config:set GITHUB_TOKEN=your-token
+    $ heroku local:run fab fetch_shortcuts
 
-I also use `redis` for storing the shortcut directory JSON blob. You'll need to install that on your dev machine and add the `Redis To Go` addon to your Heroku app. The free `nano` tier works for this project:
+Now you are ready to run the web service locally:
 
-    heroku addons:create redistogo:nano
+    $ heroku local:run foreman run python app.py
 
-In order to run the actual fetching of the shortcut information (the `/apport` route), you will also need these variables configured in the `.env` file and on Heroku:
+`foreman` informs you where the service is running. The default is [http://localhost:5000/](http://localhost:5000/).
+
+There is also a way to run the fetching of the shortcut information from the web browser - [http://localhost:5000/apport](http://localhost:5000/apport). Basic Auth is used to protect that route from non-admins. To use it you will  need these variables configured in the `.env`:
 
     ADMIN_USER_NAME=your-admin-user-name
     ADMIN_USER_PASSWORD=your-admin-user-password
 
-In order for my local machine to read the `.env` variables and otherwise mimic the Heroku environment as much as possinble I start the server like so:
+### Heroku
 
-    heroku local:run foreman run python app.py
+Before submitting a pull request should make sure the app handles a smoke test on Heroku. Create an Heroku app:
+
+    $ heroku create <your app name>
+
+
+Add the `Redis To Go` addon to your Heroku app. The free `nano` tier works for this project:
+
+    $ heroku addons:create redistogo:nano
+
+To be able to run scheduled `fabric` tasks on Heroku, add the Scheduler addon:
+
+    $ heroku addons:create scheduler:standard
+
+Configure environment variables:
+
+    $ heroku config:set GITHUB_TOKEN=your-token
+    $ heroku config:set ADMIN_USER_NAME=your-admin-user-name
+    $ heroku config:set ADMIN_USER_PASSWORD=your-admin-user-password
+
+Deploy:
+
+    $ git push heroku master
+
+When it's done you can access your app on `http://your-app-name.herokuapp.com/`. The current version will give you a `500 Server Error` when there is no shortcut data fetched yet.  Use the `/apport` route to make your Heroku app fetch the shortcuts.
 
 ### Tests
 
@@ -47,10 +99,10 @@ There's also a `testapp.py` for checking that the Flask app is sane:
 
 (It doesn't test the fetching of shortcuts info yet, since I haven't figured out how to not spam the GitHub API)
 
-**NB: The tests are a bit stupid** as I have had problems figuring out how to best factor both the tests and the code under test because of the dependencies to the GitHub API and some other things. Contributions on this area is very welcome! There are also a lot of tests missing.
+**NB: The some of the tests are a bit stupid** as I have had problems figuring out how to best factor both the tests and the code under test because of the dependencies to the GitHub API and some other things. Contributions on this area is very welcome! There are also a lot of tests missing.
 
 ## Contact
 
-I'm [https://twitter.com/cobpez](@CoBPEZ) on Twitter.
+I'm [https://twitter.com/cobpez](\@CoBPEZ) on Twitter.
 
 If you have suggestions please feel invited to file an issue. Pull requests are even more welcome. =)
