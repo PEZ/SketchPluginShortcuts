@@ -22,7 +22,7 @@ Then install `pip`, `foreman` and `heroku`. I'm on OS X and prefer to use `homeb
 
     $ sudo gem install foreman heroku
 
-Further, `redis` is used for storing the shortcut directory JSON blob. You'll need to install that on your dev machine. Using `homebrew` that becomes:
+Further, you'll need to install `redis` on your dev machine. Using `homebrew` that becomes:
 
     $ brew install redis
 
@@ -39,7 +39,7 @@ You should see your prompt return with a prefix of `(env)`. Now install requirem
 
 The project is based on [zachwill's](https://github.com/zachwill/) template for [Flask based Heroku apps](https://github.com/zachwill/flask_heroku). Have a look at that project's`README` for a discussion on how to deactivate and reactibvate the `virtualenv`environment.
 
-The shortcut information is grabbed from GitHub via the GitHub API. You will need a personal GitHub access token. [Read here how to create one.](https://help.github.com/articles/creating-an-access-token-for-command-line-use/) Then update the `GITHUB_TOKEN` configuration variable with your GitHUB API Token. Locally create a `.env` file and add:
+The shortcut information is grabbed from GitHub via the GitHub API. You will need a personal GitHub access token. [Read here how to create one.](https://help.github.com/articles/creating-an-access-token-for-command-line-use/) Then update the `GITHUB_TOKEN` configuration variable with your GitHub API Token. Locally create a `.env` file and add:
 
     GITHUB_TOKEN=your-token
 
@@ -99,7 +99,7 @@ There's also a `testapp.py` for checking that the Flask app is sane:
 
 (It doesn't test the fetching of shortcuts info yet, since I haven't figured out how to not spam the GitHub API)
 
-**NB: The some of the tests are a bit stupid** as I have had problems figuring out how to best factor both the tests and the code under test because of the dependencies to the GitHub API and some other things. Contributions on this area is very welcome! There are also a lot of tests missing.
+**NB: Some of the tests are a bit stupid** as I have had problems figuring out how to best factor both the tests and the code under test because of the dependencies to the GitHub API and some other things. Contributions on this area is very welcome! There are also a lot of tests missing.
 
 ## Contact
 
