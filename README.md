@@ -28,16 +28,16 @@ Further, you'll need to install `redis` on your dev machine. Using `homebrew` th
 
 Homebrew instructs you on how to start the redis server.
 
-Now, setup an isolated environment with `virtualenv`:
+Now, setup an isolated environment with `virtualenv` and activate it:
 
     $ virtualenv --no-site-packages env
     $ . env/bin/activate
 
-You should see your prompt return with a prefix of `(env)`. Now install requirements into your isolated environment:
+You should see your prompt return with a prefix of `(env)`. The project is based on [zachwill's](https://github.com/zachwill/) template for [Flask based Heroku apps](https://github.com/zachwill/flask_heroku). Have a look at that project's`README` for a discussion on how to deactivate and reactibvate the `virtualenv`environment.
+
+Now install requirements into your isolated environment:
 
     $ pip install -r requirements.txt
-
-The project is based on [zachwill's](https://github.com/zachwill/) template for [Flask based Heroku apps](https://github.com/zachwill/flask_heroku). Have a look at that project's`README` for a discussion on how to deactivate and reactibvate the `virtualenv`environment.
 
 The shortcut information is grabbed from GitHub via the GitHub API. You will need a personal GitHub access token. [Read here how to create one.](https://help.github.com/articles/creating-an-access-token-for-command-line-use/) Then update the `GITHUB_TOKEN` configuration variable with your GitHub API Token. Locally create a `.env` file and add:
 
@@ -49,11 +49,13 @@ You can now grab the shorcut data from GitHub. There's a `fabric` task for that:
 
 Now you are ready to run the web service locally:
 
-    $ heroku local:run foreman run python app.py
+    $ heroku local:run 'foreman start'
 
-`foreman` informs you where the service is running. The default is [http://localhost:5000/](http://localhost:5000/).
+The application starts and is reachable on the default address of [http://localhost:5000/](http://localhost:5000/). However, while this is the most Heroku-like way to run the application, for some reason you do not get very much debug information from the output in the terminal. So, this is how I most often start the server locally:
 
-There is also a way to run the fetching of the shortcut information from the web browser - [http://localhost:5000/apport](http://localhost:5000/apport). Basic Auth is used to protect that route from non-admins. To use it you will  need these variables configured in the `.env`:
+    $ heroku local:run 'foreman run python app.py'
+
+In addition to the `fabric` task, there is a way to run the fetching of the shortcut information from the web browser - [http://localhost:5000/apport](http://localhost:5000/apport). Basic Auth is used to protect that route from non-admins. To use it you will need these variables configured in the `.env`:
 
     ADMIN_USER_NAME=your-admin-user-name
     ADMIN_USER_PASSWORD=your-admin-user-password
@@ -87,11 +89,9 @@ When it's done you can access your app on `http://your-app-name.herokuapp.com/`.
 
 ### Tests
 
-For similar reasons as with the web app I also use `heroku local` for running the tests:
+Running the core tests:
 
     heroku local:run python test.py
-
-(All other ways of running the tests in a "Heroku-ish" manner I tried caused me to lose the traceback frames for failing tests.) 
 
 There's also a `testapp.py` for checking that the Flask app is sane:
 
@@ -99,10 +99,10 @@ There's also a `testapp.py` for checking that the Flask app is sane:
 
 (It doesn't test the fetching of shortcuts info yet, since I haven't figured out how to not spam the GitHub API)
 
-**NB: Some of the tests are a bit stupid** as I have had problems figuring out how to best factor both the tests and the code under test because of the dependencies to the GitHub API and some other things. Contributions on this area is very welcome! There are also a lot of tests missing.
+**NB: Some of the tests are a bit stupid** as I have had problems figuring out how to best factor the tests and the code under test because of the dependencies to the GitHub API and some other things. Contributions on this area is very welcome! There are also a lot of tests missing.
 
 ## Contact
 
-I'm [https://twitter.com/cobpez](\@CoBPEZ) on Twitter.
+I'm [@CoBPEZ](https://twitter.com/cobpez) on Twitter.
 
 If you have suggestions please feel invited to file an issue. Pull requests are even more welcome. =)
