@@ -69,10 +69,6 @@ Add the `Redis To Go` addon to your Heroku app. The free `nano` tier works for t
 
     $ heroku addons:create redistogo:nano
 
-To be able to run scheduled `fabric` tasks on Heroku, add the Scheduler addon:
-
-    $ heroku addons:create scheduler:standard
-
 Configure environment variables:
 
     $ heroku config:set RUNTIME_ENVIRONMENT=production
@@ -87,6 +83,21 @@ When it's deployed it's time to fetch the shortcut data:
     $ heroku run fab fetch_shortcuts
 
 Now access your app on `http://<your-app-name>.herokuapp.com/`.
+
+To schedule the fetching of shortcuts to happen automatically you'll need to add the `Scheduler` addon:
+
+    $ heroku addons:create scheduler:standard
+
+Then open the `Scheduler` dashboard:
+
+    $ heroku addons:open scheduler
+
+Add the add the job:
+
+    fab fetch_shortcuts
+
+And select how often you want it to run. **(Every 10th minute is probably more often than needed and also risks exhaust your GitHub API limit.)**
+
 
 ### Tests
 
