@@ -5,7 +5,10 @@ Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
 """
 
 import os
-from flask import Flask, render_template, request, redirect, url_for, Response
+import re
+from flask import Flask, render_template, request, redirect, url_for, Response, config
+
+from flask_sslify import SSLify
 
 def stream_template(template_name, **context):
     app.update_template_context(context)
@@ -15,6 +18,21 @@ def stream_template(template_name, **context):
     return rv
 
 app = Flask(__name__)
+if 'DYNO' in os.environ: # only trigger SSLify if the app is running on Heroku
+    sslify = SSLify(app)
+
+@app.context_processor
+def inject_FB_APP_ID():
+    return dict(FB_APP_ID = os.environ.get('FB_APP_ID', 'configure this in the Heroku environment'))
+
+@app.context_processor
+def inject_GA_UA_ID():
+    return dict(GA_UA_ID = os.environ.get('GA_UA_ID', 'configure this in the Heroku environment'))
+
+# request.url seems to always be http: ...
+@app.context_processor
+def inject_LISTING_BASE_URL():
+    return dict(REQUEST_URL = re.sub(r'^http:', 'https:', request.url))
 
 ###
 # Routing

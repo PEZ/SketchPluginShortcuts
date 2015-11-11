@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 
+
 {% block title %}Sketch Plugin Shortcuts{% endblock %}
+
 {% block js %}
 {% endblock %}
 
@@ -37,14 +39,22 @@
     </table>
 </div>
 
-<p><strong>NB: Only plugins listed in the <a href="https://github.com/sketchplugins/plugin-directory">Sketch Plugin Directory</a> will show up in this list</strong></p>
-
-<p>Want to help? Check out the <a href="https://github.com/PEZ/SketchPluginShortcuts">project on GitHub</a>. Tweet me any questions: <a href="https://twitter.com/cobpez">@CoBPEZ</a>.</p>
-
 <div
   class="fb-like"
-  data-share="true"
+  data-share="false"
   data-width="450"
   data-show-faces="true">
 </div>
+
+<a class="twitter-share-button"
+   href="https://twitter.com/intent/tweet?text={{ 'Hacking on a Sketch Plugin? Check the Shortcuts Directory before choosing keyboard shortcuts. #sketch'|urlencode }}"
+  data-counturl="{{ REQUEST_URL }}"> Tweet</a>
+
+<hr>
+
+<p><strong>NB: Only plugins listed in the <a href="https://github.com/sketchplugins/plugin-directory">Sketch Plugin Directory</a> will show up in this list</strong></p>
+
+<p>Want to help? Fork the <a href="https://github.com/PEZ/SketchPluginShortcuts">project on GitHub</a>. Add questions/comments below, or tweet me, <a href="https://twitter.com/cobpez">@CoBPEZ</a>.</p>
+
+<div class="fb-comments" data-href="https://pluginshortcuts.herokuapp.com" data-numposts="25"></div>
 {% endblock %}

@@ -1,6 +1,7 @@
 ecdsa==0.13
 Fabric==1.10.2
 Flask==0.10.1
+Flask-SSLify==0.1.5
 funcsigs==0.4
 github3.py==0.9.4
 greenlet==0.4.9
