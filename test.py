@@ -40,6 +40,7 @@ A list of Sketch plugins hosted at GitHub, in alphabetical order.
         self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].name, 'adamhowell/random-opacity-sketch-plugin')
         self.assertEqual(self.repos['47deg/pointgrid'].url, 'https://github.com/47deg/pointgrid')
         self.assertEqual(self.repos['ajaaibu/thaanatext'].description, '''Sketch Plugin to generate thaana strings, paragraphs, articles.''')
+        self.assertEqual(self.repos['pez/sketch-plugin-testing-repo'].description, '''testing only''')
 
     def test_build_search_query_repos_string(self):
         queries = list(pd._build_search_query_repos_string(self.repos, self.repo_limit))
