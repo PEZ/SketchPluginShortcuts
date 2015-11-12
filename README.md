@@ -1,6 +1,6 @@
 # Sketch Plugin Shortcuts Inventory
 
-(The source code for this [listing of Sketch plugin shortcuts](http:pluginshortcuts.herokuapp.com).)
+(The source code for this [listing of Sketch plugin shortcuts](https:pluginshortcuts.herokuapp.com).)
 
 This project is meant for developers of Sketch plugins who want to add non-conflicting keyboard shortcuts for their plugins.
 

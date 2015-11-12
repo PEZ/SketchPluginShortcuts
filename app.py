@@ -1,8 +1,5 @@
-"""
-Flask Documentation:     http://flask.pocoo.org/docs/
-Jinja2 Documentation:    http://jinja.pocoo.org/2/documentation/
-Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
-"""
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
 import os
 import re
