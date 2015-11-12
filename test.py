@@ -172,9 +172,10 @@ abynim/BaseAlign:  __Apply__.
 
     def test_fetch_and_add_shortcuts_to_repo(self):
         test_repo_name = 'PEZ/Sketch-Plugin-Testing-Repo'
+        test_repo_found = False
         for repo in pd._fetch_and_add_shortcuts_to_directory(self.repos, self.repo_limit):
             if repo.name == test_repo_name:
-                print repo.name
+                test_repo_found = True
                 self.assertEqual(len(self.repos[test_repo_name].shortcuts), 1)
                 self.assertEqual(self.repos[test_repo_name].shortcuts[0].to_string(), u'shift + command + d')
                 self.assertEqual(self.repos[test_repo_name].shortcuts[1].to_string(), u'shift + command + ⌫')
@@ -186,6 +187,16 @@ abynim/BaseAlign:  __Apply__.
                 self.assertEqual(self.repos[test_repo_name].shortcuts[7].to_string(), u'shift + option + command + ↓')
                 self.assertEqual(self.repos[test_repo_name].shortcuts[8].to_string(), u'shift + option + command + ←')
                 self.assertEqual(self.repos[test_repo_name].shortcuts[9].to_string(), u'shift + option + command + →')
+        self.assertTrue(test_repo_found)
+
+    def test_fetch_shortcuts_from_forked_repo(self):
+        repos = pd._extract_directory('''- [PEZ/Sketch-Plugin-Testing-Repo](https://github.com/PEZ/Sketch-Plugin-Testing-Repo) testing only''')
+        forked_repo_name = ''
+        forked_repo_found = False
+        for repo in pd._search_plugin_bundle(repos, self.repo_limit):
+            if repo.name == forked_repo_name:
+                forked_repo_found = True
+        self.assertTrue(forked_repo_found)
 
     def test_get_shortcuts_old_style(self):
         pass
