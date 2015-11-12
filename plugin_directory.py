@@ -81,30 +81,30 @@ class PluginDirectory(object):
     gh = None
 
     @staticmethod
-    def _freeze(directory):
-        redis.set(PluginDirectory.FREEZER_KEY, jsonpickle.encode(directory))
+    def _freeze(directory, prefix):
+        redis.set(prefix + PluginDirectory.FREEZER_KEY, jsonpickle.encode(directory))
 
     @staticmethod
-    def _thaw():
+    def _thaw(prefix):
         import os.path
         thawed = None
         try:
-            thawed = jsonpickle.decode(redis.get(PluginDirectory.FREEZER_KEY))
+            thawed = jsonpickle.decode(redis.get(prefix + PluginDirectory.FREEZER_KEY))
         except:
             pass
         return thawed
 
     @staticmethod
-    def fetch_directory(repo_limit):
+    def fetch_directory(repo_limit, prefix=''):
         repos = PluginDirectory._extract_directory(PluginDirectory._authorized_github_api_read(PluginDirectory.DIRECTORY_RAW_URL))
-        PluginDirectory._freeze(repos)
+        PluginDirectory._freeze(repos, prefix)
         for repo in PluginDirectory._fetch_and_add_shortcuts_to_directory(repos, repo_limit):
             yield repo
-            PluginDirectory._freeze(repos)
+            PluginDirectory._freeze(repos, prefix)
 
     @staticmethod
-    def get_directory():
-        return PluginDirectory._thaw()
+    def get_directory(prefix=''):
+        return PluginDirectory._thaw(prefix)
 
     @staticmethod
     def _extract_directory(raw):

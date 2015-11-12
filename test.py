@@ -219,8 +219,8 @@ abynim/BaseAlign:  __Apply__.
         self.assertNotEqual(pd._get_github_token(), '')
 
     def test_freeze_thaw(self):
-        pd._freeze(self.repos)
-        thawed_repos = pd._thaw()
+        pd._freeze(self.repos, 'test-')
+        thawed_repos = pd._thaw('test-')
         self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].description, thawed_repos['adamhowell/random-opacity-sketch-plugin'].description)
 
 
