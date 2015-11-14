@@ -6,12 +6,12 @@
 import unittest
 import re
 
-from plugin_directory import PluginDirectory as pd
+from plugin_directory import PluginDirectory
 
 class TestDirectory(unittest.TestCase):
 
     def setUp(self):
-        self.plugins_raw = ''' # Sketch Plugin Directory
+        self.raw = ''' # Sketch Plugin Directory
 
 A list of Sketch plugins hosted at GitHub, in alphabetical order.
 
@@ -32,18 +32,19 @@ A list of Sketch plugins hosted at GitHub, in alphabetical order.
 - [PEZ/SketchDistributor](https://github.com/pez/sketchdistributor) Distribute selection objects vertically or horizontally with a given spacing between them.
 - [utom/sketch-measure](https://github.com/utom/sketch-measure) A measure tool for Sketch.app (think Specctr for Sketch)
 '''
-        self.repos = pd._extract_directory(self.plugins_raw)
-        self.repo_limit = 5
+        self.pd = PluginDirectory(freezer_prefix='test-')
+        self.pd.fetch_directory(raw_directory_text=self.raw)
+        self.pd._repo_search_limit = 5
 
     def test_extract_repos(self):
-        self.assertEqual(len(self.repos), 14)
-        self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].name, 'adamhowell/random-opacity-sketch-plugin')
-        self.assertEqual(self.repos['47deg/pointgrid'].url, 'https://github.com/47deg/pointgrid')
-        self.assertEqual(self.repos['ajaaibu/thaanatext'].description, '''Sketch Plugin to generate thaana strings, paragraphs, articles.''')
-        self.assertEqual(self.repos['pez/sketch-plugin-testing-repo'].description, '''testing only''')
+        self.assertEqual(len(self.pd.repos), 14)
+        self.assertEqual(self.pd.repos['adamhowell/random-opacity-sketch-plugin'].name, 'adamhowell/random-opacity-sketch-plugin')
+        self.assertEqual(self.pd.repos['47deg/pointgrid'].url, 'https://github.com/47deg/pointgrid')
+        self.assertEqual(self.pd.repos['ajaaibu/thaanatext'].description, '''Sketch Plugin to generate thaana strings, paragraphs, articles.''')
+        self.assertEqual(self.pd.repos['pez/sketch-plugin-testing-repo'].description, '''testing only''')
 
     def test_build_search_query_repos_string(self):
-        queries = list(pd._build_search_query_repos_string(self.repos, self.repo_limit))
+        queries = list(self.pd._build_search_query_repos_string())
         self.assertEqual(len(queries), 3)
         for query in queries:
             self.assertTrue(re.search(r' repo:', query))
@@ -56,7 +57,7 @@ A list of Sketch plugins hosted at GitHub, in alphabetical order.
 var userValues = [doc
 abynim/BaseAlign:  __Apply__.
 ![Configuration Window](config_dialog.png)'''
-        self.assertEqual(pd._extract_shortcuts_old_style_from_text(text)[0], 'shift cmd o')
+        self.assertEqual(self.pd._extract_shortcuts_old_style_from_text(text)[0], 'shift cmd o')
         
     def test_extract_shortcut_plugin_bundle_from_text(self):
         text = '''{
@@ -157,7 +158,7 @@ abynim/BaseAlign:  __Apply__.
                 {
                    "title": "Artboards",
                    "items": [ '''
-        shortcuts = pd._extract_shortcuts_plugin_bundle_from_text(text) 
+        shortcuts = self.pd._extract_shortcuts_plugin_bundle_from_text(text) 
         self.assertEqual(len(shortcuts), 10)
         self.assertEqual(shortcuts[0], u'shift command d')
         self.assertEqual(shortcuts[1], u'cmd shift ⌫')
@@ -173,27 +174,28 @@ abynim/BaseAlign:  __Apply__.
     def test_fetch_and_add_shortcuts_to_repo(self):
         test_repo_name = 'PEZ/Sketch-Plugin-Testing-Repo'
         test_repo_found = False
-        for repo in pd._fetch_and_add_shortcuts_to_directory(self.repos, self.repo_limit):
+        for repo in self.pd._fetch_and_add_shortcuts_to_directory():
             if repo.name == test_repo_name:
                 test_repo_found = True
-                self.assertEqual(len(self.repos[test_repo_name].shortcuts), 1)
-                self.assertEqual(self.repos[test_repo_name].shortcuts[0].to_string(), u'shift + command + d')
-                self.assertEqual(self.repos[test_repo_name].shortcuts[1].to_string(), u'shift + command + ⌫')
-                self.assertEqual(self.repos[test_repo_name].shortcuts[2].to_string(), u'control + option + command + ,')
-                self.assertEqual(self.repos[test_repo_name].shortcuts[3].to_string(), u'control + option + command + .')
-                self.assertEqual(self.repos[test_repo_name].shortcuts[4].to_string(), u'command + Ö')
-                self.assertEqual(self.repos[test_repo_name].shortcuts[5].to_string(), u'command + Ä')
-                self.assertEqual(self.repos[test_repo_name].shortcuts[6].to_string(), u'shift + option + command + ↑')
-                self.assertEqual(self.repos[test_repo_name].shortcuts[7].to_string(), u'shift + option + command + ↓')
-                self.assertEqual(self.repos[test_repo_name].shortcuts[8].to_string(), u'shift + option + command + ←')
-                self.assertEqual(self.repos[test_repo_name].shortcuts[9].to_string(), u'shift + option + command + →')
+                self.assertEqual(len(self.pd.repos[test_repo_name].shortcuts), 1)
+                self.assertEqual(self.pd.repos[test_repo_name].shortcuts[0].to_string(), u'shift + command + d')
+                self.assertEqual(self.pd.repos[test_repo_name].shortcuts[1].to_string(), u'shift + command + ⌫')
+                self.assertEqual(self.pd.repos[test_repo_name].shortcuts[2].to_string(), u'control + option + command + ,')
+                self.assertEqual(self.pd.repos[test_repo_name].shortcuts[3].to_string(), u'control + option + command + .')
+                self.assertEqual(self.pd.repos[test_repo_name].shortcuts[4].to_string(), u'command + Ö')
+                self.assertEqual(self.pd.repos[test_repo_name].shortcuts[5].to_string(), u'command + Ä')
+                self.assertEqual(self.pd.repos[test_repo_name].shortcuts[6].to_string(), u'shift + option + command + ↑')
+                self.assertEqual(self.pd.repos[test_repo_name].shortcuts[7].to_string(), u'shift + option + command + ↓')
+                self.assertEqual(self.pd.repos[test_repo_name].shortcuts[8].to_string(), u'shift + option + command + ←')
+                self.assertEqual(self.pd.repos[test_repo_name].shortcuts[9].to_string(), u'shift + option + command + →')
         self.assertTrue(test_repo_found)
 
     def test_fetch_shortcuts_from_forked_repo(self):
-        repos = pd._extract_directory('''- [PEZ/Sketch-Plugin-Testing-Repo](https://github.com/PEZ/Sketch-Plugin-Testing-Repo) testing only''')
+        pd = PluginDirectory('test-')
+        pd.fetch_directory(raw_directory_text='''- [PEZ/Sketch-Plugin-Testing-Repo](https://github.com/PEZ/Sketch-Plugin-Testing-Repo) testing only''')
         forked_repo_name = ''
         forked_repo_found = False
-        for repo in pd._search_plugin_bundle(repos, self.repo_limit):
+        for repo in pd._search_plugin_bundle():
             if repo.name == forked_repo_name:
                 forked_repo_found = True
         self.assertTrue(forked_repo_found)
@@ -201,28 +203,23 @@ abynim/BaseAlign:  __Apply__.
     def test_get_shortcuts_old_style(self):
         pass
 
-    def test_add_shortcuts_to_directory(self):
-        repo_shortcuts = pd._fetch_shortcuts(self.repos, self.repo_limit)
-        pd._add_shortcuts_to_directory(self.repos, repo_shortcuts)
-        self.assertEqual(len(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts), 1)
-        self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts[0].to_string(), 'shift + command + o')
-        self.assertEqual(len(self.repos['pez/sketchdistributor'].shortcuts), 2)
-        self.assertEqual(self.repos['pez/sketchdistributor'].shortcuts[0].to_string(), u'control + option + d')
-
     def test_add_shortcuts_for_repo_to_directory(self):
-        repo_shortcuts = pd._fetch_shortcuts_old_style(self.repos, self.repo_limit)
+        repo_shortcuts = self.pd._fetch_shortcuts()
         for r, s in repo_shortcuts:
-            pd._add_shortcuts_for_repo_to_directory(self.repos, r, s)
-            self.assertEqual(self.repos[r].shortcuts, s)
+            self.pd._add_shortcuts_for_repo_to_directory(r.lower(), s)
+            self.assertEqual(self.pd.repos[r].shortcuts, s)
+        self.assertEqual(len(self.pd.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts), 1)
+        self.assertEqual(self.pd.repos['adamhowell/random-opacity-sketch-plugin'].shortcuts[0].to_string(), 'shift + command + o')
+        self.assertEqual(len(self.pd.repos['pez/sketchdistributor'].shortcuts), 2)
+        self.assertEqual(self.pd.repos['pez/sketchdistributor'].shortcuts[0].to_string(), u'control + option + d')
 
     def test_get_github_token(self):
-        self.assertNotEqual(pd._get_github_token(), '')
+        self.assertNotEqual(self.pd._github_token, '')
 
     def test_freeze_thaw(self):
-        pd._freeze(self.repos, 'test-')
-        thawed_repos = pd._thaw('test-')
-        self.assertEqual(self.repos['adamhowell/random-opacity-sketch-plugin'].description, thawed_repos['adamhowell/random-opacity-sketch-plugin'].description)
-
+        self.pd._freeze(self.pd.repos, 'test-')
+        thawed= self.pd._thaw('test-')
+        self.assertEqual(self.pd.repos['adamhowell/random-opacity-sketch-plugin'].description, thawed['adamhowell/random-opacity-sketch-plugin'].description)
 
 
 from plugin_directory import Shortcut

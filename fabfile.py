@@ -2,13 +2,15 @@
 # -*- coding: utf-8 -*-
 
 from fabric.api import task
-from plugin_directory import PluginDirectory as pd
+from plugin_directory import PluginDirectory
 
 @task
 def fetch_shortcuts():
     total_shortcuts = 0
     total_repos = 0
-    for plugin in pd.fetch_directory(pd.REPO_SEARCH_LIMIT):
+    pd = PluginDirectory()
+    pd.fetch_directory()
+    for plugin in pd.fetch_shortcuts():
         total_repos = total_repos + 1
         shortcuts = len(plugin.shortcuts)
         total_shortcuts = total_shortcuts + shortcuts

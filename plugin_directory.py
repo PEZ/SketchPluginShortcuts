@@ -75,11 +75,25 @@ class PluginDirectory(object):
     DIRECTORY_RE = re.compile(r'^- \[(.+?)\]\((.+?)\) (.+)$', re.M)
     SHORTCUT_OLD_STYLE_RE = re.compile(r'\bshortcut:\s*\(([^)]*?)\)', re.M)
     SHORTCUT_PLUGIN_BUNDLE_RE = re.compile(r'"shortcut"\s*:\s*"([^"]+?)"', re.M)
-    FREEZER_KEY = "frozen"
+    FREEZER_KEY = 'frozen'
     REPO_SEARCH_LIMIT = 40
 
-    gh = None
 
+    def __init__(self, freezer_prefix=''):
+        self._repo_search_limit = PluginDirectory.REPO_SEARCH_LIMIT
+        self._freezer_prefix = freezer_prefix
+        self.gh = None
+        self._github_token = os.environ.get('GITHUB_TOKEN','')
+        self._github_login()
+        #self.repos = PluginDirectory._thaw(freezer_prefix)
+
+    def fetch_directory(self, raw_directory_text=None):
+        if raw_directory_text is not None:
+            self.repos = self._extract_directory(raw_directory_text)
+        else:
+            self.repos = self._extract_directory(self.fetch_raw_directory_text())
+        PluginDirectory._freeze(self.repos, self._freezer_prefix)
+    
     @staticmethod
     def _freeze(directory, prefix):
         redis.set(prefix + PluginDirectory.FREEZER_KEY, jsonpickle.encode(directory))
@@ -94,30 +108,22 @@ class PluginDirectory(object):
             pass
         return thawed
 
-    @staticmethod
-    def fetch_directory(repo_limit, prefix=''):
-        repos = PluginDirectory._extract_directory(PluginDirectory._authorized_github_api_read(PluginDirectory.DIRECTORY_RAW_URL))
-        PluginDirectory._freeze(repos, prefix)
-        for repo in PluginDirectory._fetch_and_add_shortcuts_to_directory(repos, repo_limit):
+    def fetch_raw_directory_text(self):
+        return self._authorized_github_api_read(PluginDirectory.DIRECTORY_RAW_URL)
+
+    def fetch_shortcuts(self):
+        for repo in self._fetch_and_add_shortcuts_to_directory():
             yield repo
-            PluginDirectory._freeze(repos, prefix)
+            PluginDirectory._freeze(self.repos, self._freezer_prefix)
 
-    @staticmethod
-    def get_directory(prefix=''):
-        return PluginDirectory._thaw(prefix)
+    def get_directory(self):
+        return self._thaw(self._freezer_prefix)
 
-    @staticmethod
-    def _extract_directory(raw):
+    def _extract_directory(self, raw):
         repos = PluginDirectory.DIRECTORY_RE.findall(raw)
         return {repo[0].lower(): Repo(repo[0], repo[1], repo[2]) for repo in repos}
-            
-    @staticmethod
-    def _add_shortcuts_to_directory(directory, repo_shortcuts):
-        for r, s in repo_shortcuts:
-            PluginDirectory._add_shortcuts_for_repo_to_directory(directory, r.lower(), s)
 
-    @staticmethod
-    def _fetch_and_add_shortcuts_to_directory(directory, repo_limit):
+    def _fetch_and_add_shortcuts_to_directory(self):
         def _check_and_manage_duplicates(shortcuts, seen):
             for shortcut in shortcuts:
                 shortcut_string = shortcut.to_string()
@@ -129,99 +135,79 @@ class PluginDirectory(object):
                     seen[shortcut_string] = [shortcut]
 
         seen_shortcuts = {}
-        for repo_name, shortcuts in PluginDirectory._fetch_shortcuts(directory, repo_limit):
-            PluginDirectory._add_shortcuts_for_repo_to_directory(directory, repo_name, shortcuts)
+        for repo_name, shortcuts in self._fetch_shortcuts():
+            self._add_shortcuts_for_repo_to_directory(repo_name, shortcuts)
             _check_and_manage_duplicates(shortcuts, seen_shortcuts)
-            yield directory[repo_name]
+            yield self.repos[repo_name]
 
-    @staticmethod
-    def _add_shortcuts_for_repo_to_directory(directory, repo_name, shortcuts):
+    def _add_shortcuts_for_repo_to_directory(self, repo_name, shortcuts):
         for s in shortcuts:
-            directory[repo_name].add_shortcut(s)
+            self.repos[repo_name].add_shortcut(s)
 
-    @staticmethod
-    def _get_github_token():
-        return os.environ.get('GITHUB_TOKEN','')
-
-    @staticmethod
-    def _authorized_github_api_read(url):
-        req = urllib2.Request(url, headers={'Authorization': 'token %s' % PluginDirectory._get_github_token()});
+    def _authorized_github_api_read(self, url):
+        req = urllib2.Request(url, headers={ 'Authorization': 'token %s' % self._github_token });
         return urllib2.urlopen(req).read()
 
-    @staticmethod
-    def _build_search_query_repos_string(directory, repo_limit):
-        repo_names = sorted(directory.keys(), key=lambda v: v.lower())
+    def _build_search_query_repos_string(self):
+        repo_names = sorted(self.repos.keys(), key=lambda v: v.lower())
         cursor = 0
         while cursor < len(repo_names) - 1:
-            yield ' '.join('repo:%s' % k for k in repo_names[cursor:cursor + repo_limit])
-            cursor = cursor + repo_limit
+            yield ' '.join('repo:%s' % k for k in repo_names[cursor:cursor + self._repo_search_limit])
+            cursor = cursor + self._repo_search_limit
 
-    @staticmethod
-    def _github_login():
+    def _github_login(self):
         from github3 import login
-        if PluginDirectory.gh is None:
-            token = PluginDirectory._get_github_token()
-            PluginDirectory.gh = login(token=token)
+        if self.gh is None:
+            self.gh = login(token=self._github_token)
 
-    @staticmethod
-    def _fetch_shortcuts(directory, repo_limit):
+    def _fetch_shortcuts(self):
         from itertools import chain
-        search_results = [PluginDirectory._fetch_shortcuts_old_style(directory, repo_limit)]
-        search_results.append(PluginDirectory._fetch_shortcuts_plugin_bundle(directory, repo_limit))
+        search_results = [self._fetch_shortcuts_old_style()]
+        search_results.append(self._fetch_shortcuts_plugin_bundle())
         return chain.from_iterable(search_results)
 
-    @staticmethod
-    def _fetch_shortcuts_old_style(directory, repo_limit):
-        search_results = PluginDirectory._search_old_style_plugin(directory, repo_limit=repo_limit)
+    def _fetch_shortcuts_old_style(self):
+        search_results = self._search_old_style_plugin()
         for result in search_results:
             for match in result.text_matches:
                 matched_text = match['fragment']
-                extracted_shortcuts = PluginDirectory._extract_shortcuts_old_style_from_text(matched_text)
+                extracted_shortcuts = self._extract_shortcuts_old_style_from_text(matched_text)
                 if len(extracted_shortcuts) > 0:
                     yield result.repository.full_name.lower(), [Shortcut(extracted_shortcut) for extracted_shortcut in extracted_shortcuts]
     
-    @staticmethod
-    def _fetch_manifest_text_from_git_url(git_url):
+    def _fetch_manifest_text_from_git_url(self, git_url):
         import json
         from base64 import b64decode
-        content_dict = json.loads(PluginDirectory._authorized_github_api_read(git_url))
+        content_dict = json.loads(self._authorized_github_api_read(git_url))
         return b64decode(content_dict['content'])
 
-    @staticmethod
-    def _fetch_shortcuts_plugin_bundle(directory, repo_limit):
-        search_results = PluginDirectory._search_plugin_bundle(directory, repo_limit=repo_limit)
+    def _fetch_shortcuts_plugin_bundle(self):
+        search_results = self._search_plugin_bundle()
         for result in search_results:
             if result.path.endswith('.sketchplugin/Contents/Sketch/manifest.json'):
-                text = PluginDirectory._fetch_manifest_text_from_git_url(result.git_url)
-                extracted_shortcuts = PluginDirectory._extract_shortcuts_plugin_bundle_from_text(text)
+                text = self._fetch_manifest_text_from_git_url(result.git_url)
+                extracted_shortcuts = self._extract_shortcuts_plugin_bundle_from_text(text)
                 if len(extracted_shortcuts) > 0:
                     yield result.repository.full_name.lower(), [Shortcut(extracted_shortcut) for extracted_shortcut in extracted_shortcuts]
 
-    @staticmethod
-    def _search_plugin_repo(directory, repo_limit, query_prefix, text_match=False):
+    def _search_plugin_repo(self, query_prefix, text_match=False):
         from itertools import chain
-        if PluginDirectory.gh is None:
-            PluginDirectory._github_login()
-        sub_queries = PluginDirectory._build_search_query_repos_string(directory, repo_limit=repo_limit)
+        sub_queries = self._build_search_query_repos_string()
         search_results = []
         for sub_q in sub_queries:
             query = "%s %s" % (query_prefix, sub_q)
-            search_results.append(PluginDirectory.gh.search_code(query, text_match=text_match))
+            search_results.append(self.gh.search_code(query, text_match=text_match))
         return chain.from_iterable(search_results)
 
-    @staticmethod
-    def _search_old_style_plugin(directory, repo_limit):
-        return PluginDirectory._search_plugin_repo(directory, repo_limit, "shortcut in:file extension:sketchplugin", text_match=True)
+    def _search_old_style_plugin(self):
+        return self._search_plugin_repo("shortcut in:file extension:sketchplugin", text_match=True)
 
-    @staticmethod
-    def _search_plugin_bundle(directory, repo_limit):
-        return PluginDirectory._search_plugin_repo(directory, repo_limit, "shortcut in:file filename:manifest extension:json", text_match=False)
+    def _search_plugin_bundle(self):
+        return self._search_plugin_repo("shortcut in:file filename:manifest extension:json", text_match=False)
 
-    @staticmethod
-    def _extract_shortcuts_old_style_from_text(text):
+    def _extract_shortcuts_old_style_from_text(self, text):
         return [extracted.decode('utf-8') for extracted in PluginDirectory.SHORTCUT_OLD_STYLE_RE.findall(text)]
 
-    @staticmethod
-    def _extract_shortcuts_plugin_bundle_from_text(text):
+    def _extract_shortcuts_plugin_bundle_from_text(self, text):
         return [extracted.decode('utf-8') for extracted in PluginDirectory.SHORTCUT_PLUGIN_BUNDLE_RE.findall(text) if extracted.strip() != '']
 

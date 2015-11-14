@@ -38,7 +38,9 @@ def inject_LISTING_BASE_URL():
 @app.route('/')
 def home():
     """Render website's home page."""
-    from plugin_directory import PluginDirectory as pd
+    from plugin_directory import PluginDirectory
+    
+    pd = PluginDirectory()
     plugins = [plugin for plugin in pd.get_directory().values() if len(plugin.shortcuts) > 0]
     return Response(stream_template('home.html', plugins=sorted(plugins, key=lambda p: p.name.lower())))
 
