@@ -78,22 +78,6 @@ class PluginDirectory(object):
     FREEZER_KEY = 'frozen'
     REPO_SEARCH_LIMIT = 40
 
-
-    def __init__(self, freezer_prefix=''):
-        self._repo_search_limit = PluginDirectory.REPO_SEARCH_LIMIT
-        self._freezer_prefix = freezer_prefix
-        self.gh = None
-        self._github_token = os.environ.get('GITHUB_TOKEN','')
-        self._github_login()
-        #self.repos = PluginDirectory._thaw(freezer_prefix)
-
-    def fetch_directory(self, raw_directory_text=None):
-        if raw_directory_text is not None:
-            self.repos = self._extract_directory(raw_directory_text)
-        else:
-            self.repos = self._extract_directory(self.fetch_raw_directory_text())
-        PluginDirectory._freeze(self.repos, self._freezer_prefix)
-    
     @staticmethod
     def _freeze(directory, prefix):
         redis.set(prefix + PluginDirectory.FREEZER_KEY, jsonpickle.encode(directory))
@@ -108,17 +92,31 @@ class PluginDirectory(object):
             pass
         return thawed
 
-    def fetch_raw_directory_text(self):
-        return self._authorized_github_api_read(PluginDirectory.DIRECTORY_RAW_URL)
+    def __init__(self, freezer_prefix=''):
+        self._repo_search_limit = PluginDirectory.REPO_SEARCH_LIMIT
+        self._freezer_prefix = freezer_prefix
+        self.gh = None
+        self._github_token = os.environ.get('GITHUB_TOKEN','')
+        self._github_login()
+
+    def get_directory(self):
+        return self._thaw(self._freezer_prefix)
+
+    def fetch_directory(self, raw_directory_text=None):
+        if raw_directory_text is not None:
+            self.repos = self._extract_directory(raw_directory_text)
+        else:
+            self.repos = self._extract_directory(self._fetch_raw_directory_text())
+        PluginDirectory._freeze(self.repos, self._freezer_prefix)
 
     def fetch_shortcuts(self):
         for repo in self._fetch_and_add_shortcuts_to_directory():
             yield repo
             PluginDirectory._freeze(self.repos, self._freezer_prefix)
 
-    def get_directory(self):
-        return self._thaw(self._freezer_prefix)
-
+    def _fetch_raw_directory_text(self):
+        return self._authorized_github_api_read(PluginDirectory.DIRECTORY_RAW_URL)
+    
     def _extract_directory(self, raw):
         repos = PluginDirectory.DIRECTORY_RE.findall(raw)
         return {repo[0].lower(): Repo(repo[0], repo[1], repo[2]) for repo in repos}
