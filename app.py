@@ -3,16 +3,9 @@
 
 import os
 import re
-from flask import Flask, render_template, request, redirect, url_for, Response, config
+from flask import Flask, render_template, request
 
 from flask_sslify import SSLify
-
-def stream_template(template_name, **context):
-    app.update_template_context(context)
-    t = app.jinja_env.get_template(template_name)
-    rv = t.stream(context)
-    rv.enable_buffering(5)
-    return rv
 
 app = Flask(__name__)
 if 'DYNO' in os.environ: # only trigger SSLify if the app is running on Heroku
@@ -26,9 +19,9 @@ def inject_FB_APP_ID():
 def inject_GA_UA_ID():
     return dict(GA_UA_ID = os.environ.get('GA_UA_ID', 'configure this in the Heroku environment'))
 
-# request.url seems to always be http: ...
 @app.context_processor
 def inject_LISTING_BASE_URL():
+    # request.url seems to always be http: ...
     return dict(REQUEST_URL = re.sub(r'^http:', 'https:', request.url))
 
 ###
@@ -42,7 +35,7 @@ def home():
     
     pd = PluginDirectory()
     plugins = [plugin for plugin in pd.get_directory().values() if len(plugin.shortcuts) > 0]
-    return Response(stream_template('home.html', plugins=sorted(plugins, key=lambda p: p.name.lower())))
+    return render_template('home.html', plugins=sorted(plugins, key=lambda p: p.name.lower()))
 
 @app.route('/about/')
 def about():
